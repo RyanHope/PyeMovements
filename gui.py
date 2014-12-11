@@ -12,19 +12,44 @@ from PySide.QtCore import *
 
 from pyqtgraph.parametertree import Parameter, ParameterTree
 from pyqtgraph.widgets.RemoteGraphicsView import RemoteGraphicsView
+
+from CRISP import *
+import simpy
  
-class FixationSignal(QObject):
-    sig = Signal()
+class EventSignal(QObject):
+    sig = Signal(str)
  
 class CRISPWorker(QThread):
     
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
         self.exiting = False
-        self.signal = FixationSignal()
+        self.events = EventSignal()
         
+    def init_simulation(self, max_saccades, timer_states, timer_mean, labile_mean, nonlabile_mean, exec_mean):
+        self.max_saccades = max_saccades
+        self.env = simpy.Environment()
+        def env_log(self, id, stage, status):
+            sac_id = self.saccade_id if self.active_saccades>0 else 0
+            fix_id = self.fixation_id if self.active_saccades==0 else 0
+            if stage=="execution":
+                fix_id = self.fixation_id
+            print "%f\t%d\t%d\t%d\tsaccade-%d\t%s\t%s" % (self.now, self.active_saccades, sac_id, fix_id, id, stage, status)
+        self.env.log = types.MethodType(env_log, self.env)   
+        self.env.active_saccades = 0
+        self.env.saccade_id = 0
+        self.env.fixation_id = 1
+        self.env.fixation_start = 0
+        self.env.fixation_durations = []
+        self.saccade_exec = SaccadeExec(self.env, mean=exec_mean)
+        self.saccade_programmer = SaccadeProgrammer(self.env, self.saccade_exec, mean=nonlabile_mean)
+        self.saccade_planner = SaccadePlanner(self.env, self.saccade_programmer, mean=labile_mean)
+        self.brainstem_oscillator = BrainstemOscillator(self.env, self.saccade_planner, mean=timer_mean, states=timer_states)
+
     def run(self):
-        self.signal.sig.emit()
+        while (not self.exiting and (self.env.saccade_id < self.max_saccades or (self.env.saccade_id == self.max_saccades and self.env.active_saccades > 0))):
+            self.env.step()
+        self.events.sig.emit("done")
  
 class Simulator(QMainWindow):
     
@@ -55,7 +80,8 @@ class Simulator(QMainWindow):
         self.nsaccades.setRange(1,1000000)
         self.nsaccades.setValue(10000)
         
-        self.runbutton = QPushButton("Run")
+        self.runbutton = QPushButton("Start simulation")
+        self.runbutton.clicked.connect(self.handle_runbutton_clicked)
         
         self.centralwidget = QWidget(self)
         self.fixationplotview = RemoteGraphicsView()
@@ -72,10 +98,40 @@ class Simulator(QMainWindow):
         self.p = self.allplots.addPlot()
         self.setCentralWidget(self.centralwidget)
         self.centralwidget.setLayout(self.grid)
+        
+        self.runsignal = EventSignal()
         self.worker = CRISPWorker()
+        self.worker.events.sig.connect(self.handle_worker_events)
         
-        print self.modelparams.param("Saccade Planner", "Average Duration (ms)").value()
-        
+    def handle_runbutton_clicked(self):
+        if self.worker.isRunning():
+            self.worker.exiting = True
+            self.runbutton.setEnabled(False)
+            while self.worker.isRunning():
+                time.sleep(0.01)
+                continue
+            self.runbutton.setText('Start simulation')
+            self.runbutton.setEnabled(True)
+        else:
+            self.worker.exiting = False
+            print self.nsaccades.value()
+            self.worker.init_simulation(self.nsaccades.value(),
+                                        self.modelparams.param("Brainstem Oscillator", "Random Walk States").value(),
+                                        self.modelparams.param("Brainstem Oscillator", "Average Duration (ms)").value(),
+                                        self.modelparams.param("Saccade Planner", "Average Duration (ms)").value(),
+                                        self.modelparams.param("Saccade Programmer", "Average Duration (ms)").value(),
+                                        self.modelparams.param("Saccade Exec", "Average Duration (ms)").value())
+            self.worker.start()
+            self.runbutton.setEnabled(False)
+            while not self.worker.isRunning():
+                time.sleep(0.01)
+                continue
+            self.runbutton.setText('Stop simulation')
+            
+    def handle_worker_events(self, event):
+        if event == "done":
+            self.runbutton.setText('Start simulation')
+            self.runbutton.setEnabled(True)
  
 if __name__ == '__main__':
     app = QApplication(sys.argv)
