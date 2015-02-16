@@ -37,7 +37,8 @@ class SaccadePlanner(object):
         self.process = env.process(self.run())
         
     def new_saccade(self):
-        self.next_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev), (self.stdev*self.stdev)/self.mean)
+        self.next_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
+                                            (self.stdev*self.stdev)/self.mean)
         self.saccade_id += 1
         self.env.log(self.saccade_id, "target_selection", "started")
 
@@ -69,7 +70,8 @@ class SaccadeProgrammer(object):
         self.process = env.process(self.run())
         
     def _ex_saccade(self):
-        self.ex_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev), (self.stdev*self.stdev)/self.mean)
+        self.ex_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
+                                          (self.stdev*self.stdev)/self.mean)
         self.env.log(self.saccade_id, "programming", "started")
         
     def run(self):
@@ -100,7 +102,8 @@ class SaccadeExec(object):
         self.process = env.process(self.run())
         
     def _ex_saccade(self):
-        self.ex_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev), (self.stdev*self.stdev)/self.mean)
+        self.ex_saccade = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
+                                          (self.stdev*self.stdev)/self.mean)
         if self.env.active_saccades == 0:
             self.env.saccade_id += 1
         self.env.active_saccades += 1
@@ -129,12 +132,18 @@ if __name__ == '__main__':
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-saccades", type=int, default=1, help="the number of complete saccades to generate")
-    parser.add_argument("--timer_mean", type=float, action="store", default=.250, help="the average timer interval in ms")
-    parser.add_argument("--timer_states", type=int, default=11, help="the number of discrete states in the random walk timer")
-    parser.add_argument("--labile_mean", type=float, action="store", default=.180, help="the average timer interval in ms")
-    parser.add_argument("--nonlabile_mean", type=float, action="store", default=.04, help="the average timer interval in ms")
-    parser.add_argument("--exec_mean", type=float, action="store", default=.04, help="the average timer interval in ms")
+    parser.add_argument("--max-saccades", type=int, default=1,
+                        help="the number of complete saccades to generate")
+    parser.add_argument("--timer_mean", type=float, action="store", default=.250,
+                        help="the average timer interval in ms")
+    parser.add_argument("--timer_states", type=int, default=11,
+                        help="the number of discrete states in the random walk timer")
+    parser.add_argument("--labile_mean", type=float, action="store", default=.180,
+                        help="the average timer interval in ms")
+    parser.add_argument("--nonlabile_mean", type=float, action="store", default=.04,
+                        help="the average timer interval in ms")
+    parser.add_argument("--exec_mean", type=float, action="store", default=.04,
+                        help="the average timer interval in ms")
     args = parser.parse_args()
     
     print "# %s" % args
