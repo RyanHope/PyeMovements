@@ -156,7 +156,8 @@ if __name__ == '__main__':
         fix_id = self.fixation_id if self.active_saccades==0 else 0
         if stage=="execution":
             fix_id = self.fixation_id
-        print "%f\t%d\t%d\t%d\tsaccade-%d\t%s\t%s" % (self.now, self.active_saccades, sac_id, fix_id, id, stage, status)    
+        print "%f\t%d\t%d\t%d\tsaccade-%d\t%s\t%s" % (self.now, self.active_saccades,
+                                                      sac_id, fix_id, id, stage, status)    
     env.log = types.MethodType(env_log, env)   
     env.active_saccades = 0
     env.saccade_id = 0
@@ -168,8 +169,10 @@ if __name__ == '__main__':
     saccade_exec = SaccadeExec(env, mean=args.exec_mean)
     saccade_programmer = SaccadeProgrammer(env, saccade_exec, mean=args.nonlabile_mean)
     saccade_planner = SaccadePlanner(env, saccade_programmer, mean=args.labile_mean)
-    brainstem_oscillator = BrainstemOscillator(env, saccade_planner, mean=args.timer_mean, states=args.timer_states)
+    brainstem_oscillator = BrainstemOscillator(env, saccade_planner, mean=args.timer_mean,
+                                               states=args.timer_states)
     
     # Run
-    while env.saccade_id < args.max_saccades or (env.saccade_id == args.max_saccades and env.active_saccades > 0):
+    while (env.saccade_id < args.max_saccades) or
+          (env.saccade_id == args.max_saccades and env.active_saccades > 0):
         env.step()
