@@ -21,6 +21,15 @@ import numpy as np
  
 class EventSignal(QObject):
 	sig = Signal(str,object)
+	
+class GUIEnvironment(LoggingEnvironment):
+	def __init__(self, args, qtevents, output=sys.__stdout__, initial_time=0):
+		super(GUIEnvironment, self).__init__(args, output=output, initial_time=initial_time)
+		self.qtevents = qtevents
+	def log(self, id, stage, status):
+		super(GUIEnvironment, self).log(id, stage, status)
+		if stage=="execution" and status=="started":
+			self.qtevents.sig.emit("fixations",self.fixation_durations)
  
 class CRISPWorker(QThread):
 	
@@ -30,28 +39,13 @@ class CRISPWorker(QThread):
 		self.paused = False
 		self.events = EventSignal()
 		
-	def init_simulation(self, max_saccades, timer_states, timer_mean, labile_mean, nonlabile_mean, exec_mean):
-		self.max_saccades = max_saccades
-		self.env = simpy.Environment()
-		self.env.qtevents = self.events
-		def env_log(self, id, stage, status):
-			sac_id = self.saccade_id if self.active_saccades>0 else 0
-			fix_id = self.fixation_id if self.active_saccades==0 else 0
-			if stage=="execution":
-				fix_id = self.fixation_id
-				if status=="started":
-					self.qtevents.sig.emit("fixations",self.fixation_durations)
-			#print "%f\t%d\t%d\t%d\tsaccade-%d\t%s\t%s" % (self.now, self.active_saccades, sac_id, fix_id, id, stage, status)
-		self.env.log = types.MethodType(env_log, self.env)	 
-		self.env.active_saccades = 0
-		self.env.saccade_id = 0
-		self.env.fixation_id = 1
-		self.env.fixation_start = 0
-		self.env.fixation_durations = []
-		self.saccade_exec = SaccadeExec(self.env, mean=exec_mean)
-		self.saccade_programmer = SaccadeProgrammer(self.env, self.saccade_exec, mean=nonlabile_mean)
-		self.saccade_planner = SaccadePlanner(self.env, self.saccade_programmer, mean=labile_mean)
-		self.brainstem_oscillator = BrainstemOscillator(self.env, self.saccade_planner, mean=timer_mean, states=timer_states)
+	def init_simulation(self, args):
+		self.max_saccades = args['max_saccades']
+		self.env = GUIEnvironment(args, self.events)
+		self.saccade_exec = SaccadeExec(self.env, mean=args['exec_mean'])
+		self.saccade_programmer = SaccadeProgrammer(self.env, self.saccade_exec, mean=args['nonlabile_mean'])
+		self.saccade_planner = SaccadePlanner(self.env, self.saccade_programmer, mean=args['labile_mean'])
+		self.brainstem_oscillator = BrainstemOscillator(self.env, self.saccade_planner, mean=args['timer_mean'], states=args['timer_states'])
 
 	def run(self):
 		while (not self.exiting and (self.env.saccade_id < self.max_saccades or (self.env.saccade_id == self.max_saccades and self.env.active_saccades > 0))):
@@ -136,12 +130,14 @@ class Simulator(QMainWindow):
 		
 	def sim_start(self):
 		self.worker = CRISPWorker()
-		self.worker.init_simulation(self.nsaccades.value(),
-										self.modelparams.param("Brainstem Oscillator", "Random Walk States").value(),
-										self.modelparams.param("Brainstem Oscillator", "Average Duration (ms)").value(),
-										self.modelparams.param("Saccade Planner", "Average Duration (ms)").value(),
-										self.modelparams.param("Saccade Programmer", "Average Duration (ms)").value(),
-										self.modelparams.param("Saccade Exec", "Average Duration (ms)").value())
+		self.worker.init_simulation({
+			"max_saccades":self.nsaccades.value(),
+			"timer_states":self.modelparams.param("Brainstem Oscillator", "Random Walk States").value(),
+			"timer_mean":self.modelparams.param("Brainstem Oscillator", "Average Duration (ms)").value(),
+			"labile_mean":self.modelparams.param("Saccade Planner", "Average Duration (ms)").value(),
+			"nonlabile_mean":self.modelparams.param("Saccade Programmer", "Average Duration (ms)").value(),
+			"exec_mean":self.modelparams.param("Saccade Exec", "Average Duration (ms)").value()
+		})
 		self.worker.events.sig.connect(self.handle_worker_events)
 		self.worker.start()
 		while not self.worker.isRunning():
