@@ -134,6 +134,7 @@ class LoggingEnvironment(simpy.Environment):
 		super(LoggingEnvironment, self).__init__(initial_time)
 		self.active_saccades = 0
 		self.saccade_id = 0
+		self.cancellations = 0
 		self.fixation_id = 1
 		self.fixation_start = 0
 		self.fixation_durations = []
@@ -142,14 +143,19 @@ class LoggingEnvironment(simpy.Environment):
 		else:
 			self.out = output
 		self.out.write("# %s\n" % args)
-		self.out.write("time\tactive_saccades\tsaccade_id\tfixation_id\tprogram_id\tstage\tstatus\n")
+		self.out.write("time\tactive_saccades\tcancellations\tsaccade_id\tfixation_id\tprogram_id\tstage\tstatus\n")
 		
 	def log(self, id, stage, status):
 		sac_id = self.saccade_id if self.active_saccades>0 else 0
 		fix_id = self.fixation_id if self.active_saccades==0 else 0
 		if stage=="execution":
 			fix_id = self.fixation_id
-		self.out.write("%f\t%d\t%d\t%d\tsaccade-%d\t%s\t%s\n" % (self.now, self.active_saccades, sac_id, fix_id, id, stage, status))
+		elif stage=="target_selection":
+			if status=="canceled":
+				self.cancellations += 1
+			elif status=="complete":
+				self.cancellations = 0
+		self.out.write("%f\t%d\t%d\t%d\t%d\tsaccade-%d\t%s\t%s\n" % (self.now, self.active_saccades, self.cancellations, sac_id, fix_id, id, stage, status))
 
 if __name__ == '__main__':
 	
