@@ -169,9 +169,13 @@ class Simulator(QMainWindow):
 	def handle_worker_events(self, event, data):
 		if event == "fixations":
 			self.data_fixations = data
+
+	def exitHandler(self):
+		self.sim_reset()
  
 if __name__ == '__main__':
 	app = QApplication(sys.argv)
 	window = Simulator()
+	app.aboutToQuit.connect(window.exitHandler)
 	window.show()
 	sys.exit(app.exec_())
