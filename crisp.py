@@ -144,7 +144,7 @@ class LoggingEnvironment(simpy.Environment):
 		else:
 			self.out = output
 		self.out.write("# %s\n" % args)
-		self.out.write("time\tactive_saccades\tcancellations\tsaccade_id\tfixation_id\tprogram_id\tstage\tstatus\n")
+		self.out.write("time\tactive_saccades\tcancellations\tsaccade_id\tfixation_id\ttimer_id\tstage\tstatus\n")
 
 	def log(self, id, stage, status):
 		sac_id = self.saccade_id if self.active_saccades>0 else 0
@@ -156,7 +156,7 @@ class LoggingEnvironment(simpy.Environment):
 				self.cancellations += 1
 			elif status=="complete":
 				self.cancellations = 0
-		self.out.write("%f\t%d\t%d\t%d\t%d\tsaccade-%d\t%s\t%s\n" % (self.now, self.active_saccades, self.cancellations, sac_id, fix_id, id, stage, status))
+		self.out.write("%f\t%d\t%d\t%d\t%d\t%d\t%s\t%s\n" % (self.now, self.active_saccades, self.cancellations, sac_id, fix_id, id, stage, status))
 		self.out.flush()
 
 if __name__ == '__main__':
