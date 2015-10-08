@@ -7,11 +7,12 @@ import simpy
 import numpy as np
 
 class BrainstemOscillator(object):
-	def __init__(self, env, sp, mean=.250, states=11):
+	def __init__(self, env, sp, mean=.250, states=11, start_state=0):
 		self.env = env
 		self.sp = sp
 		self.mean = mean
 		self.states = states
+		self.start_state = start_state if start_state < self.states else self.states-1
 		self.process = env.process(self.run())
 
 	def next_state(self):
@@ -19,7 +20,7 @@ class BrainstemOscillator(object):
 
 	def run(self):
 		for i in itertools.count():
-			for j in itertools.count():
+			for j in itertools.count(self.start_state):
 				if j < self.states:
 					yield self.env.process(self.next_state())
 				else:
@@ -169,6 +170,8 @@ if __name__ == '__main__':
 						help="the average timer interval in ms")
 	parser.add_argument("--timer_states", type=int, default=11,
 						help="the number of discrete states in the random walk timer")
+	parser.add_argument("--timer_start_state", type=int, default=0,
+						help="the starting state of the random walk timer")
 	parser.add_argument("--labile_mean", type=float, action="store", default=.180,
 						help="the average timer interval in ms")
 	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.04,
@@ -184,7 +187,8 @@ if __name__ == '__main__':
 	saccade_programmer = SaccadeProgrammer(env, saccade_exec, mean=args['nonlabile_mean'])
 	saccade_planner = SaccadePlanner(env, saccade_programmer, mean=args['labile_mean'])
 	brainstem_oscillator = BrainstemOscillator(env, saccade_planner, mean=args['timer_mean'],
-											   states=args['timer_states'])
+											   states=args['timer_states'],
+											   start_state=args['timer_start_state'])
 
 	# Run
 	while env.saccade_id < args['max_saccades']:
