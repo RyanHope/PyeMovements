@@ -90,7 +90,7 @@ if __name__ == '__main__':
 			#print (ast.cue_time,env.now,env.now-ast.cue_time)
 			f.write("%f\n" % float(env.now-ast.cue_time))
 			f.flush()
-			if ast.trial == 100000:
+			if ast.trial == 480:
 				ret = True
 			else:
 				ast.respond(None)
