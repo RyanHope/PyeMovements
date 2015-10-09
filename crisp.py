@@ -185,6 +185,7 @@ class CRISPEnvironment(simpy.Environment):
 
 	def __init__(self, args, initial_time=0.0):
 		super(CRISPEnvironment, self).__init__(initial_time)
+		self.debug = False
 		self.stop = -1
 
 	def log(self, *args):
@@ -194,7 +195,9 @@ class CRISPEnvironment(simpy.Environment):
 			e = [self.now] + list(args)
 			if self.efun(e):
 				self.stop = True
-		print e
+		if self.debug:
+			print e
+		return e
 
 	def run_while(self, efun):
 		self.efun = efun
