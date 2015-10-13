@@ -57,9 +57,9 @@ if __name__ == '__main__':
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-saccades", type=int, default=1,
+	parser.add_argument("--max-trials", type=int, default=1,
 						help="the number of complete saccades to generate")
-	parser.add_argument("--timer_mean", type=float, action="store", default=.250,
+	parser.add_argument("--timer_mean", type=float, action="store", default=0.250,
 						help="the average timer interval in ms")
 	parser.add_argument("--timer_states", type=int, default=11,
 						help="the number of discrete states in the random walk timer")
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 						help="the starting state of the random walk timer")
 	parser.add_argument("--labile_mean", type=float, action="store", default=.180,
 						help="the average timer interval in ms")
-	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.04,
+	parser.add_argument("--nonlabile_mean", type=float, action="store", default=0.040,
 						help="the average timer interval in ms")
 	parser.add_argument("--exec_mean", type=float, action="store", default=.04,
 						help="the average timer interval in ms")
@@ -83,14 +83,19 @@ if __name__ == '__main__':
 	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	ast = AntiSaccadeTask(env)
-	f = open("latencies.txt","w")
+	f = open("latencies-%.2f.txt" % args["timer_mean"],"w")
 	def endCond(e):
 		ret = False
+		if e[2]=="ast" and e[3]=="GAP":
+			if np.random.uniform() < 0:
+				labileProg.process.interrupt(-1)
+		if e[2]=="ast" and e[3]=="CUE":
+			if np.random.uniform() < 0:
+				labileProg.process.interrupt(-1)
 		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
-			#print (ast.cue_time,env.now,env.now-ast.cue_time)
-			f.write("%f\n" % float(env.now-ast.cue_time))
+			f.write("%f\t%f\n" % (args['timer_mean'],float(env.now-ast.cue_time)))
 			f.flush()
-			if ast.trial == 480:
+			if ast.trial == args["max_trials"]:
 				ret = True
 			else:
 				ast.respond(None)

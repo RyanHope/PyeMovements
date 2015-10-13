@@ -50,10 +50,10 @@ class LabileProg(object):
 		self.env = env
 		self.nonlabile = nonlabile
 		self.setMean(mean)
-		self.setStdev(mean/4.)
+		self.setStdev(mean/3.)
 		self.next_event = 0
 		self.process = env.process(self.run())
-		self.cancellations = 0
+		self.restarts = 0
 
 	def setMean(self, mean):
 		self.mean = mean
@@ -72,15 +72,19 @@ class LabileProg(object):
 					yield self.env.timeout(self.next_event)
 					self.next_event = 0
 				except simpy.Interrupt as e:
-					if self.next_event < simpy.core.Infinity:
+					if e.cause == -1:
 						self.env.log(self.spid, self.__alias__, "canceled")
-						self.cancellations += 1
-					self.spid = e.cause
-					self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
-													  (self.stdev*self.stdev)/self.mean)
-					self.env.log(self.spid, self.__alias__, "started")
-			self.env.log(self.spid, self.__alias__, "complete", self.cancellations)
-			self.cancellations = 0
+						self.next_event = simpy.core.Infinity
+					else:
+						if self.next_event < simpy.core.Infinity:
+							self.env.log(self.spid, self.__alias__, "restarted")
+							self.restarts += 1
+						self.spid = e.cause
+						self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
+														  (self.stdev*self.stdev)/self.mean)
+						self.env.log(self.spid, self.__alias__, "started")
+			self.env.log(self.spid, self.__alias__, "complete", self.restarts)
+			self.restarts = 0
 			self.nonlabile.process.interrupt(self.spid)
 
 class NonLabileProg(object):
@@ -89,9 +93,10 @@ class NonLabileProg(object):
 		self.env = env
 		self.sp = sp
 		self.setMean(mean)
-		self.setStdev(mean/4.)
+		self.setStdev(mean/3.)
 		self.next_event = 0
 		self.process = env.process(self.run())
+		self.restarts = 0
 
 	def setMean(self, mean):
 		self.mean = mean
@@ -110,14 +115,15 @@ class NonLabileProg(object):
 					yield self.env.timeout(self.next_event)
 					self.next_event = 0
 				except simpy.Interrupt as e:
-					self.spid = e.cause
 					if self.next_event < simpy.core.Infinity:
-						raise RuntimeError("nonlabile_programming canceled")
-						self.env.log(self.spid, self.__alias__, "canceled")
+						self.env.log(self.spid, self.__alias__, "restarted")
+						self.restarts += 1
+					self.spid = e.cause
 					self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
 													  (self.stdev*self.stdev)/self.mean)
 					self.env.log(self.spid, self.__alias__, "started")
 			self.env.log(self.spid, self.__alias__, "complete")
+			self.restarts = 0
 			self.sp.process.interrupt(self.spid)
 
 class SaccadeExec(object):
