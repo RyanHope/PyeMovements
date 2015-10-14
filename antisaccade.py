@@ -71,6 +71,10 @@ if __name__ == '__main__':
 						help="the average timer interval in ms")
 	parser.add_argument("--exec_mean", type=float, action="store", default=.04,
 						help="the average timer interval in ms")
+	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00,
+						help="the probability of cancelation on gap")
+	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00,
+	          help="the probability of cancelation on cue")
 	args = vars(parser.parse_args())
 
 	env = CRISPEnvironment(args)
@@ -83,17 +87,17 @@ if __name__ == '__main__':
 	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	ast = AntiSaccadeTask(env)
-	f = open("latencies-%.2f.txt" % args["timer_mean"],"w")
+	f = open("latencies-%.2f-%.2f-%.2f-%.2f.txt" % (args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
 	def endCond(e):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
-			if np.random.uniform() < 0:
+			if np.random.uniform() < args["gap_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
-			if np.random.uniform() < 0:
+			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
-			f.write("%f\t%f\n" % (args['timer_mean'],float(env.now-ast.cue_time)))
+			f.write("%f\t%f\t%f\t%f\t%f\n" % (args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
 			f.flush()
 			if ast.trial == args["max_trials"]:
 				ret = True
