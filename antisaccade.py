@@ -87,7 +87,7 @@ if __name__ == '__main__':
 	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	ast = AntiSaccadeTask(env)
-	f = open("latencies-%.2f-%.2f-%.2f-%.2f.txt" % (args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
+	f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
 	def endCond(e):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
-			f.write("%f\t%f\t%f\t%f\t%f\n" % (args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
+			f.write("%d\t%f\t%f\t%f\t%f\t%f\n" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
 			f.flush()
 			if ast.trial == args["max_trials"]:
 				ret = True

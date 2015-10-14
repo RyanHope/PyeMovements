@@ -10,6 +10,19 @@ setwd("~/PyeMovements/")
 require(ggplot2)
 ```
 
+## Max Trials (N=11,timer=.250,labile=.180)
+ 
+```{r, echo=FALSE}
+data.trials = read.delim("sim_trials.dat",header=T)
+ggplot(data.trials[data.trials$latency<2,]) + 
+  geom_line(aes(x=latency,group=max_trials,color=max_trials),stat="density",size=1.25) +
+  scale_color_continuous("Trials") + 
+  theme_bw() +
+  theme(legend.position = c(0.8, 0.8)) +
+  xlab("Latency (in seconds) of first saccade post cue appearance") +
+  ylab("Density")
+```
+
 ## Mean Timer (N=11,labile=.180)
 
 ```{r, echo=FALSE}
