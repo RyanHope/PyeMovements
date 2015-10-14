@@ -2,7 +2,7 @@
 title: "CRISP-Antisaccade"
 author: "Ryan Hope"
 date: "10/13/2015"
-output: html_document
+output: md_document
 ---
 
 ```{r,include=FALSE}
