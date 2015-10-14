@@ -2,7 +2,11 @@
 title: "CRISP-Antisaccade"
 author: "Ryan Hope"
 date: "10/13/2015"
-output: md_document
+output: 
+  html_document: 
+    fig_height: 8
+    fig_width: 12
+    keep_md: yes
 ---
 
 ```{r,include=FALSE}
