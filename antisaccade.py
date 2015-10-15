@@ -6,6 +6,7 @@ import types
 import simpy
 import numpy as np
 import struct
+import json
 
 from crisp import *
 
@@ -95,7 +96,7 @@ def main(args):
 		# "labile_mean": args["labile_mean"],
 		# "gap_cancel_prob": args["gap_cancel_prob"],
 		# "cue_cancel_prob": args["cue_cancel_prob"],
-		"latencies": '"%s"' % struct.pack('%sf' % len(latencies), *latencies)
+		"latencies": "'%s'" % json.dumps(latencies)
 	}
 
 def get_args(args=sys.argv[1:]):
@@ -132,5 +133,4 @@ def run_mm(max_trials, timer_mean, labile_mean, gap_cancel_prob, cue_cancel_prob
 	return main(args)
 
 if __name__ == '__main__':
-	import json
-	print(main(get_args()))
+	print main(get_args())
