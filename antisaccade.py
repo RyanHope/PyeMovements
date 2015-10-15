@@ -87,11 +87,11 @@ def main(args):
 	env.run_while(endCond)
 	#f.close()
 	return {
-		"max_trials": args["max_trials"],
-		"timer_mean": args["timer_mean"],
-		"labile_mean": args["labile_mean"],
-		"gap_cancel_prob": args["gap_cancel_prob"],
-		"cue_cancel_prob": args["cue_cancel_prob"],
+		# "max_trials": args["max_trials"],
+		# "timer_mean": args["timer_mean"],
+		# "labile_mean": args["labile_mean"],
+		# "gap_cancel_prob": args["gap_cancel_prob"],
+		# "cue_cancel_prob": args["cue_cancel_prob"],
 		"latencies": latencies
 	}
 
