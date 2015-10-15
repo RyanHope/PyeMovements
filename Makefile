@@ -1,16 +1,15 @@
 VERSION := `git describe --tags --dirty`
-CRISP		:= crisp-$(VERSION)
 
 help:
 	@echo "Options: bundle"
 
 bundle:
 	rm -f bundle
-	mkdir -p bundle/$(CRISP)/simpy/resources
-	cp antisaccade.py crisp.py bundle/$(CRISP)
-	cp simpy/*.py bundle/$(CRISP)/simpy
-	cp simpy/resources/*.py bundle/$(CRISP)/simpy/resources
-	cd bundle; zip -r $(CRISP).zip $(CRISP)
+	mkdir -p bundle/crisp/simpy/resources
+	cp antisaccade.py crisp.py bundle/crisp
+	cp simpy/*.py bundle/crisp/simpy
+	cp simpy/resources/*.py bundle/crisp/simpy/resources
+	cd bundle; zip -r crisp-$(VERSION).zip crisp
 
 clean:
 	rm -f `find *.zip *.pyc latencies*`
