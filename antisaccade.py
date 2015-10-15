@@ -5,6 +5,7 @@ import itertools
 import types
 import simpy
 import numpy as np
+import struct
 
 from crisp import *
 
@@ -94,7 +95,7 @@ def main(args):
 		# "labile_mean": args["labile_mean"],
 		# "gap_cancel_prob": args["gap_cancel_prob"],
 		# "cue_cancel_prob": args["cue_cancel_prob"],
-		"latencies": '"%s"' % ",".join(map(str,latencies))
+		"latencies": '"%s"' % struct.pack('%sf' % len(latencies), *latencies)
 	}
 
 def get_args(args=sys.argv[1:]):
@@ -132,4 +133,4 @@ def run_mm(max_trials, timer_mean, labile_mean, gap_cancel_prob, cue_cancel_prob
 
 if __name__ == '__main__':
 	import json
-	print(json.dumps(main(get_args())))
+	print(main(get_args()))
