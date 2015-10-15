@@ -18,63 +18,68 @@ require(ggplot2)
  
 ```{r, echo=FALSE}
 data.trials = read.delim("sim_trials.dat",header=T)
-ggplot(data.trials[data.trials$latency<2,]) + 
+ggplot(data.trials) + 
   geom_line(aes(x=latency,group=max_trials,color=max_trials),stat="density",size=1.25) +
   scale_color_continuous("Trials") + 
   theme_bw() +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
-  ylab("Density")
+  ylab("Density") +
+  coord_cartesian(xlim=c(0,2))
 ```
 
 ## Mean Timer (N=11,labile=.180)
 
 ```{r, echo=FALSE}
 data.timer = read.delim("sim_timer.dat",header=T)
-ggplot(data.timer[data.timer$latency<2,]) + 
+ggplot(data.timer) + 
   geom_line(aes(x=latency,group=timer_mean,color=timer_mean),stat="density",size=1.25) +
   scale_color_continuous("Mean Timer (s)") + 
   theme_bw() +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
-  ylab("Density")
+  ylab("Density") +
+  coord_cartesian(xlim=c(0,2))
 ```
 
 ## Mean Labile (N=11,timer=.250)
 
 ```{r, echo=FALSE}
 data.labile = read.delim("sim_labile.dat",header=T)
-ggplot(data.labile[data.labile$latency<2,]) + 
+ggplot(data.labile) + 
   geom_line(aes(x=latency,group=labile_mean,color=labile_mean),stat="density",size=1.25) +
   scale_color_continuous("Mean Labile (s)") + 
   theme_bw() +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
-  ylab("Density")
+  ylab("Density") +
+  coord_cartesian(xlim=c(0,2))
 ```
 
 ## Gap Cancellation (N=11,timer=.250,labile=.180)
  
 ```{r, echo=FALSE}
 data.gap = read.delim("sim_gap.dat",header=T)
-ggplot(data.gap[data.gap$latency<2,]) + 
+ggplot(data.gap) + 
   geom_line(aes(x=latency,group=gap_cancel_prob,color=gap_cancel_prob),stat="density",size=1.25) +
   scale_color_continuous("Gap Cancellation Probability") + 
   theme_bw() +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
-  ylab("Density")
+  ylab("Density") +
+  coord_cartesian(xlim=c(0,2))
 ```
  
 ## Cue Cancellation (N=11,timer=.250,labile=.180)
  
 ```{r, echo=FALSE}
 data.cue = read.delim("sim_cue.dat",header=T)
-ggplot(data.cue[data.cue$latency<2,]) + 
+ggplot(data.cue) + 
   geom_line(aes(x=latency,group=cue_cancel_prob,color=cue_cancel_prob),stat="density",size=1.25) +
   scale_color_continuous("Cue Cancellation Probability") + 
   theme_bw() +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
-  ylab("Density")
+  ylab("Density") +
+  coord_cartesian(xlim=c(0,2))
 ```
