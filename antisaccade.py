@@ -6,7 +6,6 @@ import types
 import simpy
 import numpy as np
 import struct
-import json
 
 from crisp import *
 
@@ -96,7 +95,7 @@ def main(args):
 		# "labile_mean": args["labile_mean"],
 		# "gap_cancel_prob": args["gap_cancel_prob"],
 		# "cue_cancel_prob": args["cue_cancel_prob"],
-		"latencies": "'%s'" % json.dumps(latencies)
+		"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
 	}
 
 def get_args(args=sys.argv[1:]):
