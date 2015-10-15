@@ -14,14 +14,16 @@ class AntiSaccadeTask(object):
 		self.env = env
 		self.trial = 0
 		self.states = ["FIXATE","GAP","CUE","TARGET","MASK"]
+		self.modes = ["anti","pro"]
+		self.sides = ["left","right"]
 		self.reset()
 		self.process = env.process(self.run())
 
 	def reset(self):
 		self.trial += 1
 		self.fixate_dur = np.random.uniform(1.5,3.5)
-		self.mode = np.random.choice(["anti","pro"])
-		self.cue_side = np.random.choice(["left","right"])
+		self.mode = self.modes[np.random.randint(2)]
+		self.cue_side = self.sides[np.random.randint(2)]
 		self.gap_dur = .2
 		self.cue_dur = .4
 		self.target_dur = .15
