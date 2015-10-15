@@ -1,10 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import sys,os
 import itertools
 import types
 import simpy
 import numpy as np
+import struct
 
 from crisp import *
 
@@ -14,14 +15,16 @@ class AntiSaccadeTask(object):
 		self.env = env
 		self.trial = 0
 		self.states = ["FIXATE","GAP","CUE","TARGET","MASK"]
+		self.modes = ["anti","pro"]
+		self.sides = ["left","right"]
 		self.reset()
 		self.process = env.process(self.run())
 
 	def reset(self):
 		self.trial += 1
 		self.fixate_dur = np.random.uniform(1.5,3.5)
-		self.mode = np.random.choice(["anti","pro"])
-		self.cue_side = np.random.choice(["left","right"])
+		self.mode = self.modes[np.random.randint(2)]
+		self.cue_side = self.sides[np.random.randint(2)]
 		self.gap_dur = .2
 		self.cue_dur = .4
 		self.target_dur = .15
@@ -52,8 +55,50 @@ class AntiSaccadeTask(object):
 			if self.state < len(self.states):
 				self.state += 1
 
-if __name__ == '__main__':
+def main(args):
+	env = CRISPEnvironment(args)
 
+	# Create components
+	processVision = ProcessVision(env)
+	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
+	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
+	labileProg = LabileProg(env, nonLabileProg, mean=args['labile_mean'])
+	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
+
+	ast = AntiSaccadeTask(env)
+	#f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
+	latencies = []
+	def endCond(e):
+		ret = False
+		if e[2]=="ast" and e[3]=="GAP":
+			if np.random.uniform() < args["gap_cancel_prob"]:
+				labileProg.process.interrupt(-1)
+		if e[2]=="ast" and e[3]=="CUE":
+			if np.random.uniform() < args["cue_cancel_prob"]:
+				labileProg.process.interrupt(-1)
+		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
+			latencies.append(float(env.now-ast.cue_time))
+			#f.write("%d\t%f\t%f\t%f\t%f\t%f\n" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
+			#f.flush()
+			if ast.trial == args["max_trials"]:
+				ret = True
+			else:
+				ast.respond(None)
+		return ret
+
+	env.debug = False
+	env.run_while(endCond)
+	#f.close()
+	return {
+		# "max_trials": args["max_trials"],
+		# "timer_mean": args["timer_mean"],
+		# "labile_mean": args["labile_mean"],
+		# "gap_cancel_prob": args["gap_cancel_prob"],
+		# "cue_cancel_prob": args["cue_cancel_prob"],
+		"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
+	}
+
+def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
@@ -75,36 +120,16 @@ if __name__ == '__main__':
 						help="the probability of cancelation on gap")
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00,
 	          help="the probability of cancelation on cue")
-	args = vars(parser.parse_args())
+	return vars(parser.parse_args(args))
 
-	env = CRISPEnvironment(args)
+def run_mm(max_trials, timer_mean, labile_mean, gap_cancel_prob, cue_cancel_prob):
+	args = get_args([])
+	args["max_trials"] = int(max_trials)
+	args["timer_mean"] = float(timer_mean)
+	args["labile_mean"] = float(labile_mean)
+	args["gap_cancel_prob"] = float(gap_cancel_prob)
+	args["cue_cancel_prob"] = float(cue_cancel_prob)
+	return main(args)
 
-	# Create components
-	processVision = ProcessVision(env)
-	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
-	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
-	labileProg = LabileProg(env, nonLabileProg, mean=args['labile_mean'])
-	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
-
-	ast = AntiSaccadeTask(env)
-	f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
-	def endCond(e):
-		ret = False
-		if e[2]=="ast" and e[3]=="GAP":
-			if np.random.uniform() < args["gap_cancel_prob"]:
-				labileProg.process.interrupt(-1)
-		if e[2]=="ast" and e[3]=="CUE":
-			if np.random.uniform() < args["cue_cancel_prob"]:
-				labileProg.process.interrupt(-1)
-		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
-			f.write("%d\t%f\t%f\t%f\t%f\t%f\n" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
-			f.flush()
-			if ast.trial == args["max_trials"]:
-				ret = True
-			else:
-				ast.respond(None)
-		return ret
-
-	env.debug = False
-	env.run_while(endCond)
-	f.close()
+if __name__ == '__main__':
+	print main(get_args())

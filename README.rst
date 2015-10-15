@@ -1,7 +1,8 @@
 PyeMovements
 ============
-Models of saccade generation using SimPy.
+Dynamical models of oculomotor control using Numpy and SimPy.
 
 Dependencies
 ============
-* SimPy
+* Numpy
+* SimPy (bundled)
