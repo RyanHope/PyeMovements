@@ -5,6 +5,7 @@ import itertools
 import types
 import simpy
 import numpy as np
+import json
 
 from crisp import *
 
@@ -94,7 +95,7 @@ def main(args):
 		# "labile_mean": args["labile_mean"],
 		# "gap_cancel_prob": args["gap_cancel_prob"],
 		# "cue_cancel_prob": args["cue_cancel_prob"],
-		"latencies": latencies
+		"latencies": json.dumps(latencies)
 	}
 
 def get_args(args=sys.argv[1:]):
