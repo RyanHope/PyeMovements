@@ -95,7 +95,7 @@ def main(args):
 		"latencies": latencies
 	}
 
-def get_args():
+def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
@@ -117,10 +117,10 @@ def get_args():
 						help="the probability of cancelation on gap")
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00,
 	          help="the probability of cancelation on cue")
-	return vars(parser.parse_args())
+	return vars(parser.parse_args(args))
 
 def run_mm(max_trials, timer_mean, labile_mean, gap_cancel_prob, cue_cancel_prob):
-	args = get_args()
+	args = get_args([])
 	args["max_trials"] = int(max_trials)
 	args["timer_mean"] = float(timer_mean)
 	args["labile_mean"] = float(labile_mean)
