@@ -94,7 +94,7 @@ def main(args):
 		# "labile_mean": args["labile_mean"],
 		# "gap_cancel_prob": args["gap_cancel_prob"],
 		# "cue_cancel_prob": args["cue_cancel_prob"],
-		"latencies": ",".join(map(str,latencies))
+		"latencies": '"%s"' % ",".join(map(str,latencies))
 	}
 
 def get_args(args=sys.argv[1:]):
