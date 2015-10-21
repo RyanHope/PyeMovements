@@ -1,12 +1,16 @@
 ---
-title: "CRISP-Antisaccade"
-author: "Ryan Hope"
-date: "10/13/2015"
-output: 
-  html_document: 
-    fig_height: 8
-    fig_width: 12
-    keep_md: yes
+title       : CRISP-Antisaccade
+subtitle    : Early simulation analysis
+author      : Ryan Hope
+job         : CogWorks Lab, Rensselaer Polytechnic Institute
+biglogo     : rpi_logo.png
+logo        : cogworks_logo.png
+framework   : io2012
+highlighter : highlight.js
+hitheme     : tomorrow
+widgets     : [mathjax]
+mode        : selfcontained
+knit        : slidify::knit2slides
 ---
 
 ```{r,include=FALSE}
@@ -25,10 +29,14 @@ ggplot(data.trials) +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
   ylab("Density") +
-  coord_cartesian(xlim=c(0,2))
+  coord_cartesian(xlim=c(0,1))
 ```
 
+--- &twocol
+
 ## Mean Timer (N=11,labile=.180)
+
+*** =left
 
 ```{r, echo=FALSE}
 data.timer = read.delim("sim_timer.dat",header=T)
@@ -39,8 +47,17 @@ ggplot(data.timer) +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
   ylab("Density") +
-  coord_cartesian(xlim=c(0,2))
+  coord_cartesian(xlim=c(0,1))
 ```
+
+*** =right
+
+- The timer value seems to interact with the labile stage duration
+ - When timer interval << labile duration, kurtosis <0, labile duration dominates mode
+ - When timer interval ~= labile duration, kurtosis >0
+ - When timer interval >> labile duration, kurtosis <0, timer interval dominates mode
+
+---
 
 ## Mean Labile (N=11,timer=.250)
 
@@ -53,8 +70,10 @@ ggplot(data.labile) +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
   ylab("Density") +
-  coord_cartesian(xlim=c(0,2))
+  coord_cartesian(xlim=c(0,1))
 ```
+
+---
 
 ## Gap Cancellation (N=11,timer=.250,labile=.180)
  
@@ -67,8 +86,10 @@ ggplot(data.gap) +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
   ylab("Density") +
-  coord_cartesian(xlim=c(0,2))
+  coord_cartesian(xlim=c(0,1))
 ```
+
+---
  
 ## Cue Cancellation (N=11,timer=.250,labile=.180)
  
@@ -81,5 +102,5 @@ ggplot(data.cue) +
   theme(legend.position = c(0.8, 0.8)) +
   xlab("Latency (in seconds) of first saccade post cue appearance") +
   ylab("Density") +
-  coord_cartesian(xlim=c(0,2))
+  coord_cartesian(xlim=c(0,1))
 ```
