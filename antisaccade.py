@@ -128,7 +128,7 @@ def run_mm(max_trials, timer_states, timer_mean1, timer_mean2, timer_mean3, labi
 	args["timer_mean2"] = float(timer_mean2)
 	args["timer_mean3"] = float(timer_mean3)
 	args["labile_mean"] = float(labile_mean)
-	args["labile_stdev"] = float(labile_mean)
+	args["labile_stdev"] = float(labile_stdev)
 	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
 	return main(args)
