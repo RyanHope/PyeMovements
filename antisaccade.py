@@ -104,37 +104,31 @@ def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-trials", type=int, default=1,
-						help="the number of complete saccades to generate")
-	parser.add_argument("--timer_mean1", type=float, action="store", default=0.250,
-						help="the average timer interval in ms")
-	parser.add_argument("--timer_mean2", type=float, action="store", default=0.250,
-						help="the average timer interval in ms")
-	parser.add_argument("--timer_mean3", type=float, action="store", default=0.250,
-						help="the average timer interval in ms")
-	parser.add_argument("--timer_states", type=int, default=11,
-						help="the number of discrete states in the random walk timer")
-	parser.add_argument("--timer_start_state", type=int, default=-1,
-						help="the starting state of the random walk timer")
-	parser.add_argument("--labile_mean", type=float, action="store", default=.180,
-						help="the average timer interval in ms")
-	parser.add_argument("--nonlabile_mean", type=float, action="store", default=0.040,
-						help="the average timer interval in ms")
-	parser.add_argument("--exec_mean", type=float, action="store", default=.04,
-						help="the average timer interval in ms")
-	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00,
-						help="the probability of cancelation on gap")
-	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00,
-	          help="the probability of cancelation on cue")
+	parser.add_argument("--max-trials", type=int, default=1)
+	parser.add_argument("--timer_mean1", type=float, action="store", default=0.250)
+	parser.add_argument("--timer_mean2", type=float, action="store", default=0.250)
+	parser.add_argument("--timer_mean3", type=float, action="store", default=0.250)
+	parser.add_argument("--timer_states", type=int, default=11)
+	parser.add_argument("--timer_start_state", type=int, default=-1)
+	parser.add_argument("--labile_mean", type=float, action="store", default=.180)
+	parser.add_argument("--labile_stdev", type=float, action="store", default=.060)
+	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.040)
+	parser.add_argument("--nonlabile_stdev", type=float, action="store", default=.010)
+	parser.add_argument("--exec_mean", type=float, action="store", default=.040)
+	parser.add_argument("--exec_stdev", type=float, action="store", default=.010)
+	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00)
+	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00)
 	return vars(parser.parse_args(args))
 
-def run_mm(max_trials, timer_mean1, timer_mean2, timer_mean3, labile_mean, gap_cancel_prob, cue_cancel_prob):
+def run_mm(max_trials, timer_states, timer_mean1, timer_mean2, timer_mean3, labile_mean, labile_stdev, gap_cancel_prob, cue_cancel_prob):
 	args = get_args([])
 	args["max_trials"] = int(max_trials)
+	args["timer_states"] = float(timer_states)
 	args["timer_mean1"] = float(timer_mean1)
 	args["timer_mean2"] = float(timer_mean2)
 	args["timer_mean3"] = float(timer_mean3)
 	args["labile_mean"] = float(labile_mean)
+	args["labile_stdev"] = float(labile_mean)
 	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
 	return main(args)

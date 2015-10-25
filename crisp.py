@@ -46,11 +46,11 @@ class Timer(object):
 
 class LabileProg(object):
 	__alias__ = "labile_programming"
-	def __init__(self, env, nonlabile, mean=.180):
+	def __init__(self, env, nonlabile, mean=.180, stdev=.060):
 		self.env = env
 		self.nonlabile = nonlabile
 		self.setMean(mean)
-		self.setStdev(mean/3.)
+		self.setStdev(stdev)
 		self.next_event = 0
 		self.process = env.process(self.run())
 		self.restarts = 0
@@ -89,11 +89,11 @@ class LabileProg(object):
 
 class NonLabileProg(object):
 	__alias__ = "nonlabile_programming"
-	def __init__(self, env, sp, mean=.040):
+	def __init__(self, env, sp, mean=.040, stdev=.010):
 		self.env = env
 		self.sp = sp
 		self.setMean(mean)
-		self.setStdev(mean/3.)
+		self.setStdev(stdev)
 		self.next_event = 0
 		self.process = env.process(self.run())
 		self.restarts = 0
@@ -128,11 +128,11 @@ class NonLabileProg(object):
 
 class SaccadeExec(object):
 	__alias__ = "saccade_execution"
-	def __init__(self, env, pv, mean=.040):
+	def __init__(self, env, pv, mean=.040, stdev=.010):
 		self.env = env
 		self.pv = pv
 		self.setMean(mean)
-		self.setStdev(mean/3.)
+		self.setStdev(stdev)
 		self.next_event = 0
 		self.process = env.process(self.run())
 		self.saccades = 0
@@ -217,20 +217,16 @@ if __name__ == '__main__':
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-saccades", type=int, default=1,
-						help="the number of complete saccades to generate")
-	parser.add_argument("--timer_mean", type=float, action="store", default=.250,
-						help="the average timer interval in ms")
-	parser.add_argument("--timer_states", type=int, default=11,
-						help="the number of discrete states in the random walk timer")
-	parser.add_argument("--timer_start_state", type=int, default=-1,
-						help="the starting state of the random walk timer")
-	parser.add_argument("--labile_mean", type=float, action="store", default=.180,
-						help="the average timer interval in ms")
-	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.04,
-						help="the average timer interval in ms")
-	parser.add_argument("--exec_mean", type=float, action="store", default=.04,
-						help="the average timer interval in ms")
+	parser.add_argument("--max-saccades", type=int, default=1)
+	parser.add_argument("--timer_mean", type=float, action="store", default=.250)
+	parser.add_argument("--timer_states", type=int, default=11)
+	parser.add_argument("--timer_start_state", type=int, default=-1)
+	parser.add_argument("--labile_mean", type=float, action="store", default=.180)
+	parser.add_argument("--labile_stdev", type=float, action="store", default=.060)
+	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.040)
+	parser.add_argument("--nonlabile_stdev", type=float, action="store", default=.010)
+	parser.add_argument("--exec_mean", type=float, action="store", default=.040)
+	parser.add_argument("--exec_stdev", type=float, action="store", default=.010)
 	args = vars(parser.parse_args())
 
 	env = CRISPEnvironment(args)
