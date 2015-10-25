@@ -63,7 +63,7 @@ def main(args):
 	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
 	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
 	labileProg = LabileProg(env, nonLabileProg, mean=args['labile_mean'])
-	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
+	timer = Timer(env, labileProg, mean=args['timer_mean1'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	ast = AntiSaccadeTask(env)
 	#f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
@@ -71,9 +71,11 @@ def main(args):
 	def endCond(e):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
+			timer.setMean(args['timer_mean2'])
 			if np.random.uniform() < args["gap_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
+			timer.setMean(args['timer_mean3'])
 			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
@@ -104,7 +106,11 @@ def get_args(args=sys.argv[1:]):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--max-trials", type=int, default=1,
 						help="the number of complete saccades to generate")
-	parser.add_argument("--timer_mean", type=float, action="store", default=0.250,
+	parser.add_argument("--timer_mean1", type=float, action="store", default=0.250,
+						help="the average timer interval in ms")
+	parser.add_argument("--timer_mean2", type=float, action="store", default=0.250,
+						help="the average timer interval in ms")
+	parser.add_argument("--timer_mean3", type=float, action="store", default=0.250,
 						help="the average timer interval in ms")
 	parser.add_argument("--timer_states", type=int, default=11,
 						help="the number of discrete states in the random walk timer")
@@ -122,10 +128,12 @@ def get_args(args=sys.argv[1:]):
 	          help="the probability of cancelation on cue")
 	return vars(parser.parse_args(args))
 
-def run_mm(max_trials, timer_mean, labile_mean, gap_cancel_prob, cue_cancel_prob):
+def run_mm(max_trials, timer_mean1, timer_mean2, timer_mean3, labile_mean, gap_cancel_prob, cue_cancel_prob):
 	args = get_args([])
 	args["max_trials"] = int(max_trials)
-	args["timer_mean"] = float(timer_mean)
+	args["timer_mean1"] = float(timer_mean1)
+	args["timer_mean2"] = float(timer_mean2)
+	args["timer_mean3"] = float(timer_mean3)
 	args["labile_mean"] = float(labile_mean)
 	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
