@@ -120,16 +120,14 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00)
 	return vars(parser.parse_args(args))
 
-def run_mm(max_trials, timer_states, timer_mean1, timer_mean2, timer_mean3, labile_mean, labile_stdev, gap_cancel_prob, cue_cancel_prob):
+def run_mm(timer_states, timer_mean1, timer_mean2, timer_mean3, labile_mean, labile_stdev, cue_cancel_prob):
 	args = get_args([])
-	args["max_trials"] = int(max_trials)
 	args["timer_states"] = float(timer_states)
 	args["timer_mean1"] = float(timer_mean1)
 	args["timer_mean2"] = float(timer_mean2)
 	args["timer_mean3"] = float(timer_mean3)
 	args["labile_mean"] = float(labile_mean)
 	args["labile_stdev"] = float(labile_stdev)
-	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
 	return main(args)
 
