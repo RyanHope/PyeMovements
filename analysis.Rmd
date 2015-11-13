@@ -2,7 +2,7 @@
 title       : CRISP-Antisaccade
 subtitle    : Early simulation analysis
 author      : Ryan Hope
-job         : CogWorks Lab, Rensselaer Polytechnic Institute
+job         : Rensselaer Polytechnic Institute
 biglogo     : rpi_logo.png
 logo        : cogworks_logo.png
 framework   : io2012

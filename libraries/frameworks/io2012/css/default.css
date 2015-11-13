@@ -1274,7 +1274,7 @@ article.smaller q:before, article.smaller q:after {
 /* line 884, ../scss/default.scss */
 aside.gdbar {
   height: 97px;
-  width: 215px;
+  width: 715px;
   position: absolute;
   left: -1px;
   top: 125px;
@@ -1329,7 +1329,7 @@ aside.gdbar.bottom {
 }
 /* line 913, ../scss/default.scss */
 aside.gdbar img {
-  width: 125px;
+  width: 625px;
   height: 85px;
   position: absolute;
   right: 0;
