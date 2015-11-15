@@ -88,7 +88,7 @@ def main(args):
 				ast.respond(None)
 		return ret
 
-	env.debug = False
+	env.debug = True
 	env.run_while(endCond)
 	#f.close()
 	return {
@@ -104,7 +104,7 @@ def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-trials", type=int, default=2500)
+	parser.add_argument("--max-trials", type=int, default=1)
 	parser.add_argument("--timer_mean1", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_mean2", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_mean3", type=float, action="store", default=0.250)
