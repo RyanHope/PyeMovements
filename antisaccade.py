@@ -25,6 +25,11 @@ class AntiSaccadeTask(object):
 		self.fixate_dur = np.random.uniform(1.5,3.5)
 		self.mode = self.modes[np.random.randint(2)]
 		self.cue_side = self.sides[np.random.randint(2)]
+		self.target_side = "left"
+		if self.mode == "pro" and self.cue_side == "right":
+			self.target_side = "right"
+		elif self.mode == "anti" and self.cue_side == "left":
+			self.target_side = "right"
 		self.gap_dur = .2
 		self.cue_dur = .4
 		self.target_dur = .15
@@ -55,17 +60,29 @@ class AntiSaccadeTask(object):
 			if self.state < len(self.states):
 				self.state += 1
 
+class ASTLabileProg(LabileProg):
+
+	def getTarget(self):
+		if self.env.ast.state < 2:
+			self.target = "center"
+		elif self.env.ast.state == 2:
+			self.target = self.env.ast.cue_side
+		elif self.env.ast.state > 2:
+			self.target = self.env.ast.target_side
+
 def main(args):
 	env = CRISPEnvironment(args)
 
-	# Create components
+	# Create task components
+	env.ast = AntiSaccadeTask(env)
+
+	# Create model components
 	processVision = ProcessVision(env)
 	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
 	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
-	labileProg = LabileProg(env, nonLabileProg, mean=args['labile_mean'])
+	labileProg = ASTLabileProg(env, nonLabileProg, mean=args['labile_mean'])
 	timer = Timer(env, labileProg, mean=args['timer_mean1'], states=args['timer_states'], start_state=args['timer_start_state'])
 
-	ast = AntiSaccadeTask(env)
 	#f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
 	latencies = []
 	def endCond(e):
@@ -78,14 +95,14 @@ def main(args):
 			timer.setMean(args['timer_mean3'])
 			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
-		if ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started"):
-			latencies.append(float(env.now-ast.cue_time))
+		if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!="center"):
+			latencies.append(float(env.now-env.ast.cue_time))
 			#f.write("%d\t%f\t%f\t%f\t%f\t%f\n" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
 			#f.flush()
-			if ast.trial == args["max_trials"]:
+			if env.ast.trial == args["max_trials"]:
 				ret = True
 			else:
-				ast.respond(None)
+				env.ast.respond(None)
 		return ret
 
 	env.debug = True

@@ -55,6 +55,9 @@ class LabileProg(object):
 		self.process = env.process(self.run())
 		self.restarts = 0
 
+	def getTarget(self):
+		self.target = None
+
 	def setMean(self, mean):
 		self.mean = mean
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
@@ -83,9 +86,10 @@ class LabileProg(object):
 						self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
 														  (self.stdev*self.stdev)/self.mean)
 						self.env.log(self.spid, self.__alias__, "started")
-			self.env.log(self.spid, self.__alias__, "complete", self.restarts)
+			self.getTarget()
+			self.env.log(self.spid, self.__alias__, "complete", self.restarts, self.target)
 			self.restarts = 0
-			self.nonlabile.process.interrupt(self.spid)
+			self.nonlabile.process.interrupt((self.spid,self.target))
 
 class NonLabileProg(object):
 	__alias__ = "nonlabile_programming"
@@ -118,13 +122,13 @@ class NonLabileProg(object):
 					if self.next_event < simpy.core.Infinity:
 						self.env.log(self.spid, self.__alias__, "restarted")
 						self.restarts += 1
-					self.spid = e.cause
+					self.spid, self.target = e.cause
 					self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
 													  (self.stdev*self.stdev)/self.mean)
-					self.env.log(self.spid, self.__alias__, "started")
-			self.env.log(self.spid, self.__alias__, "complete")
+					self.env.log(self.spid, self.__alias__, "started", self.target)
+			self.env.log(self.spid, self.__alias__, "complete", self.target)
 			self.restarts = 0
-			self.sp.process.interrupt(self.spid)
+			self.sp.process.interrupt((self.spid, self.target))
 
 class SaccadeExec(object):
 	__alias__ = "saccade_execution"
@@ -137,6 +141,10 @@ class SaccadeExec(object):
 		self.process = env.process(self.run())
 		self.saccades = 0
 		self.mergers = 0
+		self.setPosition()
+
+	def setPosition(self):
+		self.position = "center"
 
 	def setMean(self, mean):
 		self.mean = mean
@@ -155,7 +163,7 @@ class SaccadeExec(object):
 					yield self.env.timeout(self.next_event)
 					self.next_event = 0
 				except simpy.Interrupt as e:
-					self.spid = e.cause
+					self.spid, self.position = e.cause
 					if self.next_event < simpy.core.Infinity:
 						self.env.log(self.spid, self.__alias__, "merged")
 						self.mergers += 1
@@ -163,8 +171,9 @@ class SaccadeExec(object):
 													  (self.stdev*self.stdev)/self.mean)
 					self.saccades += 1
 					self.pv.process.interrupt((self.spid, True))
-					self.env.log(self.spid, self.__alias__, "started", self.mergers, self.saccades)
-			self.env.log(self.spid, self.__alias__, "complete", self.mergers, self.saccades)
+					self.env.log(self.spid, self.__alias__, "started", self.mergers, self.saccades, self.position)
+			self.setPosition()
+			self.env.log(self.spid, self.__alias__, "complete", self.mergers, self.saccades, self.position)
 			self.mergers = 0
 			self.pv.process.interrupt((self.spid, False))
 
