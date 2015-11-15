@@ -6,6 +6,7 @@ import types
 import simpy
 import numpy as np
 import struct
+import json
 
 from crisp import *
 
@@ -149,4 +150,5 @@ def run_mm(timer_states, timer_mean1, timer_mean2, timer_mean3, labile_mean, lab
 	return main(args)
 
 if __name__ == '__main__':
-	print main(get_args())
+	with open("output.json","w") as f:
+		json.dump(main(get_args()), f)
