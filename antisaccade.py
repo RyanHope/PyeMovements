@@ -17,20 +17,20 @@ class AntiSaccadeTask(object):
 		self.trial = 0
 		self.states = ["FIXATE","GAP","CUE","TARGET","MASK"]
 		self.modes = ["anti","pro"]
-		self.sides = ["left","right"]
+		self.sides = [-1,1]
 		self.reset()
 		self.process = env.process(self.run())
 
 	def reset(self):
 		self.trial += 1
-		self.fixate_dur = np.random.uniform(1.5,3.5)
-		self.mode = self.modes[np.random.randint(2)]
+		self.fixate_dur = np.random.uniform(0.5,1.5)
+		self.mode = "pro"#self.modes[np.random.randint(2)]
 		self.cue_side = self.sides[np.random.randint(2)]
-		self.target_side = "left"
+		self.target_side = -1
 		if self.mode == "pro" and self.cue_side == "right":
-			self.target_side = "right"
+			self.target_side = 1
 		elif self.mode == "anti" and self.cue_side == "left":
-			self.target_side = "right"
+			self.target_side = 1
 		self.gap_dur = .2
 		self.cue_dur = .4
 		self.target_dur = .15
@@ -63,13 +63,18 @@ class AntiSaccadeTask(object):
 
 class ASTLabileProg(LabileProg):
 
-	def getTarget(self):
-		if self.env.ast.state < 2:
-			self.target = "center"
-		elif self.env.ast.state == 2:
-			self.target = self.env.ast.cue_side
-		elif self.env.ast.state > 2:
-			self.target = self.env.ast.target_side
+	def getTarget(self, alpha=0):
+		if alpha > np.random.uniform():
+			# top-down
+			pass
+		else:
+			# bottom-up
+			if self.env.ast.state < 2:
+				self.target = 0
+			elif self.env.ast.state == 2:
+				self.target = self.env.ast.cue_side
+			elif self.env.ast.state > 2:
+				self.target = self.env.ast.target_side
 
 def main(args):
 	env = CRISPEnvironment(args)
@@ -82,39 +87,34 @@ def main(args):
 	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
 	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
 	labileProg = ASTLabileProg(env, nonLabileProg, mean=args['labile_mean'])
-	timer = Timer(env, labileProg, mean=args['timer_mean1'], states=args['timer_states'], start_state=args['timer_start_state'])
+	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
-	#f = open("latencies-%d-%.2f-%.2f-%.2f-%.2f.txt" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"]),"w")
 	latencies = []
 	def endCond(e):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
-			timer.setMean(args['timer_mean2'])
+			timer.setRate(args['gap_timer_rate'])
 			if np.random.uniform() < args["gap_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
-			timer.setMean(args['timer_mean3'])
+			timer.setRate(args['cue_timer_rate'])
 			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
-		if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!="center"):
+		if e[2]=="ast" and e[3]=="TARGET":
+			timer.setRate(args['target_timer_rate'])
+			if np.random.uniform() < args["target_cancel_prob"]:
+				labileProg.process.interrupt(-1)
+		if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
 			latencies.append(float(env.now-env.ast.cue_time))
-			#f.write("%d\t%f\t%f\t%f\t%f\t%f\n" % (args["max_trials"],args["timer_mean"],args["labile_mean"],args["gap_cancel_prob"],args["cue_cancel_prob"],float(env.now-ast.cue_time)))
-			#f.flush()
 			if env.ast.trial == args["max_trials"]:
 				ret = True
 			else:
 				env.ast.respond(None)
 		return ret
 
-	env.debug = True
+	env.debug = args["debug"]
 	env.run_while(endCond)
-	#f.close()
 	return {
-		# "max_trials": args["max_trials"],
-		# "timer_mean": args["timer_mean"],
-		# "labile_mean": args["labile_mean"],
-		# "gap_cancel_prob": args["gap_cancel_prob"],
-		# "cue_cancel_prob": args["cue_cancel_prob"],
 		"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
 	}
 
@@ -122,10 +122,8 @@ def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-trials", type=int, default=1)
-	parser.add_argument("--timer_mean1", type=float, action="store", default=0.250)
-	parser.add_argument("--timer_mean2", type=float, action="store", default=0.250)
-	parser.add_argument("--timer_mean3", type=float, action="store", default=0.250)
+	parser.add_argument("--max-trials", type=int, default=2500)
+	parser.add_argument("--timer_mean", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_states", type=int, default=11)
 	parser.add_argument("--timer_start_state", type=int, default=-1)
 	parser.add_argument("--labile_mean", type=float, action="store", default=.180)
@@ -135,20 +133,32 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--exec_mean", type=float, action="store", default=.040)
 	parser.add_argument("--exec_stdev", type=float, action="store", default=.010)
 	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00)
+	parser.add_argument("--gap_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00)
+	parser.add_argument("--cue_timer_rate", type=float, action="store", default=1.0)
+	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
+	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
+	parser.add_argument("--debug", action="store_true")
+	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
 
-def run_mm(timer_states, timer_mean1, timer_mean2, timer_mean3, labile_mean, labile_stdev, cue_cancel_prob):
+def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
-	args["timer_mean1"] = float(timer_mean1)
-	args["timer_mean2"] = float(timer_mean2)
-	args["timer_mean3"] = float(timer_mean3)
+	args["timer_mean"] = float(timer_mean)
 	args["labile_mean"] = float(labile_mean)
 	args["labile_stdev"] = float(labile_stdev)
+	args["gap_cancel_prob"] = float(gap_cancel_prob)
+	args["gap_timer_rate"] = float(gap_timer_rate)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
+	args["cue_timer_rate"] = float(cue_timer_rate)
 	return main(args)
 
 if __name__ == '__main__':
-	with open("output.json","w") as f:
-		json.dump(main(get_args()), f)
+	args = get_args()
+	results = main(args)
+	if args["outfile"] != -1:
+		if args["outfile"] == None:
+			json.dump(results, sys.stdout)
+		else:
+			json.dump(results, args["outfile"])

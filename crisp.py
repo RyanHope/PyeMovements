@@ -8,11 +8,12 @@ import numpy as np
 
 class Timer(object):
 	__alias__ = "timer"
-	def __init__(self, env, labile, mean=.250, states=11, start_state=0):
+	def __init__(self, env, labile, mean=.250, states=11, start_state=0, rate=1.0):
 		self.env = env
 		self.labile = labile
 		self.setStates(states)
 		self.setMean(mean)
+		self.setRate(rate)
 		if start_state == -1:
 			self.start_state = np.random.randint(self.states)
 		elif start_state >= self.states:
@@ -29,8 +30,12 @@ class Timer(object):
 		self.mean = mean
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
 
+	def setRate(self, rate):
+		self.rate = rate
+		self.env.log(0, self.__alias__, "set_rate", self.rate)
+
 	def next_state(self):
-		yield self.env.timeout(-(self.mean / self.states) * np.log(1 - np.random.uniform()))
+		yield self.env.timeout(-(self.mean / self.states * self.rate) * np.log(1 - np.random.uniform()))
 
 	def run(self):
 		for i in itertools.count(1):
@@ -41,6 +46,7 @@ class Timer(object):
 				else:
 					break
 			self.env.log(i, self.__alias__, "reset")
+			self.setRate(1.0)
 			self.labile.process.interrupt(i)
 			self.start_state = 0
 
