@@ -8,7 +8,7 @@ import numpy as np
 import struct
 import json
 
-from scipy import stats
+from scipy.stats import ks_2samp
 
 from crisp import *
 
@@ -121,8 +121,8 @@ def main(args):
 	with open("latencies.csv","r") as data:
 		for line in data.readlines():
 			line = line.strip().split(",")
-			lat = map(float,line[1:])
-			subjects["ks_"+line[0]],_ = stats.ks_2samp(latencies, lat)
+			lat = [float(l) for l in line[1:]]
+			subjects["ks_"+line[0]],_ = ks_2samp(latencies, lat)
 	return subjects
 
 	# return {
