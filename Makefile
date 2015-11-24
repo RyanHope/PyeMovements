@@ -14,5 +14,5 @@ bundle:
 	cd bundle; zip -r $(CRISP).zip $(CRISP)
 
 clean:
-	rm -f `find *.zip *.pyc latencies*`
+	rm -f `find *.zip *.pyc`
 	rm -rf bundle

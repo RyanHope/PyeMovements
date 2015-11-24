@@ -121,8 +121,8 @@ def main(args):
 	with open("latencies.csv","r") as data:
 		for line in data.readlines():
 			line = line.strip().split(",")
-			subjects[line[0]] = map(float,line[1:])
-			subjects[line[0]],_ = stats.ks_2samp(latencies, subjects[line[0]])
+			lat = map(float,line[1:])
+			subjects["ks_"+line[0]],_ = stats.ks_2samp(latencies, lat)
 	return subjects
 
 	# return {
