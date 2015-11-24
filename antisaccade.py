@@ -8,6 +8,8 @@ import numpy as np
 import struct
 import json
 
+from scipy import stats
+
 from crisp import *
 
 class AntiSaccadeTask(object):
@@ -114,9 +116,18 @@ def main(args):
 
 	env.debug = args["debug"]
 	env.run_while(endCond)
-	return {
-		"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
-	}
+
+	subjects = {}
+	with open("latencies.csv","r") as data:
+		for line in data.readlines():
+			line = line.strip().split(",")
+			subjects[line[0]] = map(float,line[1:])
+			subjects[line[0]],_ = stats.ks_2samp(latencies, subjects[line[0]])
+	return subjects
+
+	# return {
+	# 	"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
+	# }
 
 def get_args(args=sys.argv[1:]):
 	import argparse
