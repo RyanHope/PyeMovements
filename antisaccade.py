@@ -122,16 +122,16 @@ def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-trials", type=int, default=2500)
+	parser.add_argument("--max-trials", type=int, default=500)
 	parser.add_argument("--timer_mean", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_states", type=int, default=11)
 	parser.add_argument("--timer_start_state", type=int, default=-1)
 	parser.add_argument("--labile_mean", type=float, action="store", default=.180)
-	parser.add_argument("--labile_stdev", type=float, action="store", default=.060)
+	parser.add_argument("--labile_stdev", type=int, action="store", default=3)
 	parser.add_argument("--nonlabile_mean", type=float, action="store", default=.040)
-	parser.add_argument("--nonlabile_stdev", type=float, action="store", default=.010)
+	parser.add_argument("--nonlabile_stdev", type=int, action="store", default=3)
 	parser.add_argument("--exec_mean", type=float, action="store", default=.040)
-	parser.add_argument("--exec_stdev", type=float, action="store", default=.010)
+	parser.add_argument("--exec_stdev", type=int, action="store", default=3)
 	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--gap_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00)
@@ -142,12 +142,11 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
 
-def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
+def run_mm(timer_states, timer_mean, labile_mean, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
 	args["timer_mean"] = float(timer_mean)
 	args["labile_mean"] = float(labile_mean)
-	args["labile_stdev"] = float(labile_stdev)
 	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["gap_timer_rate"] = float(gap_timer_rate)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
@@ -162,3 +161,4 @@ if __name__ == '__main__':
 			json.dump(results, sys.stdout)
 		else:
 			json.dump(results, args["outfile"])
+	sys.stdout.flush()

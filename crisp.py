@@ -70,7 +70,7 @@ class LabileProg(object):
 
 	def setStdev(self, stdev):
 		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
+		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
 
 	def run(self):
 		while True:
@@ -78,6 +78,7 @@ class LabileProg(object):
 				self.next_event = simpy.core.Infinity
 			while self.next_event:
 				try:
+					self.getTarget()
 					yield self.env.timeout(self.next_event)
 					self.next_event = 0
 				except simpy.Interrupt as e:
@@ -92,7 +93,7 @@ class LabileProg(object):
 						self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
 														  (self.stdev*self.stdev)/self.mean)
 						self.env.log(self.spid, self.__alias__, "started")
-			self.getTarget()
+			#self.getTarget()
 			self.env.log(self.spid, self.__alias__, "complete", self.restarts, self.target)
 			self.restarts = 0
 			self.nonlabile.process.interrupt((self.spid,self.target))
@@ -114,7 +115,7 @@ class NonLabileProg(object):
 
 	def setStdev(self, stdev):
 		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
+		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
 
 	def run(self):
 		while True:
@@ -158,7 +159,7 @@ class SaccadeExec(object):
 
 	def setStdev(self, stdev):
 		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
+		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
 
 	def run(self):
 		while True:
@@ -217,7 +218,9 @@ class CRISPEnvironment(simpy.Environment):
 			if self.efun(e):
 				self.stop = True
 		if self.debug:
-			print e
+			sys.stderr.write(str(e))
+			sys.stderr.write("\n")
+			sys.stderr.flush()
 		return e
 
 	def run_while(self, efun):
