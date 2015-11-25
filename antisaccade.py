@@ -8,8 +8,6 @@ import numpy as np
 import struct
 import json
 
-from scipy.stats import ks_2samp
-
 from crisp import *
 
 class AntiSaccadeTask(object):
@@ -65,10 +63,10 @@ class AntiSaccadeTask(object):
 
 class ASTLabileProg(LabileProg):
 
-	def getTarget(self, alpha=0):
-		if alpha > np.random.uniform():
+	def getTarget(self):
+		if self.alpha != 0:
 			# top-down
-			pass
+			self.target = self.attn.position
 		else:
 			# bottom-up
 			if self.env.ast.state < 2:
@@ -78,7 +76,52 @@ class ASTLabileProg(LabileProg):
 			elif self.env.ast.state > 2:
 				self.target = self.env.ast.target_side
 
+class VisualAttention(object):
+	__alias__ = "attention_shift"
+	def __init__(self, env, mean=.180, stdev=.060):
+		self.env = env
+		self.setMean(mean)
+		self.setStdev(stdev)
+		self.target = 0
+		self.position = 0
+		self.next_event = 0
+		self.process = env.process(self.run())
+		self.restarts = 0
+		self.target = 0
+		self.position = 0
+
+	def setMean(self, mean):
+		self.mean = mean
+		self.env.log(0, self.__alias__, "set_mean", self.mean)
+
+	def setStdev(self, stdev):
+		self.stdev = stdev
+		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
+
+	def run(self):
+		while True:
+			if self.next_event == 0:
+				self.next_event = simpy.core.Infinity
+			while self.next_event:
+				try:
+					self.event = self.env.timeout(self.next_event, self.target)
+					yield self.event
+					self.next_event = 0
+				except simpy.Interrupt as e:
+					if self.next_event < simpy.core.Infinity:
+						self.env.log(-1, self.__alias__, "restarted")
+						self.restarts += 1
+					self.target = e.cause
+					self.next_event = np.random.gamma((self.mean*self.mean)/(self.stdev*self.stdev),
+													  (self.stdev*self.stdev)/self.mean)
+					self.env.log(-1, self.__alias__, "started", self.target)
+			self.env.log(-1, self.__alias__, "complete", self.target)
+			self.position = self.event.value
+			self.restarts = 0
+
 def main(args):
+	from scipy.stats import ks_2samp
+
 	env = CRISPEnvironment(args)
 
 	# Create task components
@@ -86,9 +129,10 @@ def main(args):
 
 	# Create model components
 	processVision = ProcessVision(env)
-	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'])
-	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'])
-	labileProg = ASTLabileProg(env, nonLabileProg, mean=args['labile_mean'])
+	visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
+	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
+	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
+	labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=1)
 	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	latencies = []
@@ -100,10 +144,12 @@ def main(args):
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
 			timer.setRate(args['cue_timer_rate'])
+			visAttn.process.interrupt(env.ast.cue_side)
 			if np.random.uniform() < args["cue_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="TARGET":
 			timer.setRate(args['target_timer_rate'])
+			visAttn.process.interrupt(env.ast.target_side)
 			if np.random.uniform() < args["target_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
@@ -143,6 +189,8 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--nonlabile_stdev", type=int, action="store", default=3)
 	parser.add_argument("--exec_mean", type=float, action="store", default=.040)
 	parser.add_argument("--exec_stdev", type=int, action="store", default=3)
+	parser.add_argument("--attn_mean", type=float, action="store", default=.180)
+	parser.add_argument("--attn_stdev", type=int, action="store", default=3)
 	parser.add_argument("--gap_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--gap_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--cue_cancel_prob", type=float, action="store", default=0.00)
@@ -153,11 +201,12 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
 
-def run_mm(timer_states, timer_mean, labile_mean, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
+def run_mm(timer_states, timer_mean, labile_mean, attn_mean, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
 	args["timer_mean"] = float(timer_mean)
 	args["labile_mean"] = float(labile_mean)
+	args["attn_mean"] = float(attn_mean)
 	args["gap_cancel_prob"] = float(gap_cancel_prob)
 	args["gap_timer_rate"] = float(gap_timer_rate)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)

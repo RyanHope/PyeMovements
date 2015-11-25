@@ -52,9 +52,11 @@ class Timer(object):
 
 class LabileProg(object):
 	__alias__ = "labile_programming"
-	def __init__(self, env, nonlabile, mean=.180, stdev=.060):
+	def __init__(self, env, nonlabile, attn=None, mean=.180, stdev=3, alpha=0):
 		self.env = env
 		self.nonlabile = nonlabile
+		self.attn = attn
+		self.alpha = 0
 		self.setMean(mean)
 		self.setStdev(stdev)
 		self.next_event = 0
@@ -100,7 +102,7 @@ class LabileProg(object):
 
 class NonLabileProg(object):
 	__alias__ = "nonlabile_programming"
-	def __init__(self, env, sp, mean=.040, stdev=.010):
+	def __init__(self, env, sp, mean=.040, stdev=3):
 		self.env = env
 		self.sp = sp
 		self.setMean(mean)
@@ -139,7 +141,7 @@ class NonLabileProg(object):
 
 class SaccadeExec(object):
 	__alias__ = "saccade_execution"
-	def __init__(self, env, pv, mean=.040, stdev=.010):
+	def __init__(self, env, pv, mean=.040, stdev=3):
 		self.env = env
 		self.pv = pv
 		self.setMean(mean)
@@ -151,7 +153,7 @@ class SaccadeExec(object):
 		self.setPosition()
 
 	def setPosition(self):
-		self.position = "center"
+		self.position = 0
 
 	def setMean(self, mean):
 		self.mean = mean
