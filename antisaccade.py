@@ -78,7 +78,7 @@ class ASTLabileProg(LabileProg):
 
 class VisualAttention(object):
 	__alias__ = "attention_shift"
-	def __init__(self, env, mean=.180, stdev=.060):
+	def __init__(self, env, mean=.180, stdev=3):
 		self.env = env
 		self.setMean(mean)
 		self.setStdev(stdev)
@@ -95,8 +95,8 @@ class VisualAttention(object):
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
 
 	def setStdev(self, stdev):
-		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
+		self.stdev = self.mean/stdev
+		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
 
 	def run(self):
 		while True:
@@ -163,17 +163,17 @@ def main(args):
 	env.debug = args["debug"]
 	env.run_while(endCond)
 
-	subjects = {}
+	results = {}
 	with open("latencies.csv","r") as data:
 		for line in data.readlines():
 			line = line.strip().split(",")
 			lat = [float(l) for l in line[1:]]
-			subjects["ks_"+line[0]],_ = ks_2samp(latencies, lat)
-	return subjects
+			results["ks_"+line[0]],_ = ks_2samp(latencies, lat)
 
-	# return {
-	# 	"latencies": "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
-	# }
+	if args["latencies"]:
+		results["latencies"] = "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
+
+	return results
 
 def get_args(args=sys.argv[1:]):
 	import argparse
@@ -198,6 +198,7 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--debug", action="store_true")
+	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
 

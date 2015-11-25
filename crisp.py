@@ -71,8 +71,8 @@ class LabileProg(object):
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
 
 	def setStdev(self, stdev):
-		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
+		self.stdev = self.mean/stdev
+		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
 
 	def run(self):
 		while True:
@@ -116,8 +116,8 @@ class NonLabileProg(object):
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
 
 	def setStdev(self, stdev):
-		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
+		self.stdev = self.mean/stdev
+		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
 
 	def run(self):
 		while True:
@@ -160,8 +160,8 @@ class SaccadeExec(object):
 		self.env.log(0, self.__alias__, "set_mean", self.mean)
 
 	def setStdev(self, stdev):
-		self.stdev = stdev
-		self.env.log(0, self.__alias__, "set_stdev", self.mean/self.stdev)
+		self.stdev = self.mean/stdev
+		self.env.log(0, self.__alias__, "set_stdev", self.stdev)
 
 	def run(self):
 		while True:
