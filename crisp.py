@@ -35,7 +35,7 @@ class Timer(object):
 		self.env.log(0, self.__alias__, "set_rate", self.rate)
 
 	def next_state(self):
-		yield self.env.timeout(-(self.mean / self.states * self.rate) * np.log(1 - np.random.uniform()))
+		yield self.env.timeout(-(1/((self.states/self.mean)*self.rate))*np.log(1-np.random.uniform()))
 
 	def run(self):
 		for i in itertools.count(1):
