@@ -140,7 +140,7 @@ def main(args):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
 			timer.setRate(args['gap_timer_rate'])
-			visAttn.process.interrupt(env.ast.cue_side)
+			visAttn.process.interrupt(0)
 			if np.random.uniform() < args["gap_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
