@@ -52,11 +52,11 @@ class Timer(object):
 
 class LabileProg(object):
 	__alias__ = "labile_programming"
-	def __init__(self, env, nonlabile, attn=None, mean=.180, stdev=3, alpha=0):
+	def __init__(self, env, nonlabile, attn=None, mean=.180, stdev=3, alpha=1):
 		self.env = env
 		self.nonlabile = nonlabile
 		self.attn = attn
-		self.alpha = 0
+		self.setAlpha(alpha)
 		self.setMean(mean)
 		self.setStdev(stdev)
 		self.next_event = 0
@@ -65,6 +65,10 @@ class LabileProg(object):
 
 	def getTarget(self):
 		self.target = None
+
+	def setAlpha(self, alpha):
+		self.alpha = alpha
+		self.env.log(0, self.__alias__, "set_alpha", self.alpha)
 
 	def setMean(self, mean):
 		self.mean = mean

@@ -132,7 +132,7 @@ def main(args):
 	visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
 	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
 	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
-	labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=1)
+	labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
 	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 
 	latencies = []
@@ -197,12 +197,13 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--cue_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
+	parser.add_argument("--alpha", type=float, action="store", default=1.0)
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
 
-def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate):
+def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate, alpha):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
 	args["timer_mean"] = float(timer_mean)
@@ -214,6 +215,7 @@ def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_
 	args["gap_timer_rate"] = float(gap_timer_rate)
 	args["cue_cancel_prob"] = float(cue_cancel_prob)
 	args["cue_timer_rate"] = float(cue_timer_rate)
+	args["alpha"] = float(alpha)
 	return main(args)
 
 if __name__ == '__main__':
