@@ -165,7 +165,10 @@ def main(args):
 	env.run_while(endCond)
 
 	results = {}
-	with open("latencies.csv","r") as data:
+	filename = "latencies.csv"
+	if args['alpha']==1:
+		filename = "latencies2.csv"
+	with open(filename,"r") as data:
 		for line in data.readlines():
 			line = line.strip().split(",")
 			lat = [float(l) for l in line[1:]]
@@ -198,7 +201,7 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--cue_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
-	parser.add_argument("--alpha", type=float, action="store", default=1.0)
+	parser.add_argument("--alpha", type=float, action="store", default=0.0)
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
