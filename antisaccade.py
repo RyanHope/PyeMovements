@@ -64,7 +64,7 @@ class AntiSaccadeTask(object):
 class ASTLabileProg(LabileProg):
 
 	def getTarget(self):
-		if self.alpha != 0:
+		if self.alpha == 1:
 			# top-down
 			self.target = self.attn.position
 		else:
@@ -140,6 +140,7 @@ def main(args):
 		ret = False
 		if e[2]=="ast" and e[3]=="GAP":
 			timer.setRate(args['gap_timer_rate'])
+			visAttn.process.interrupt(env.ast.cue_side)
 			if np.random.uniform() < args["gap_cancel_prob"]:
 				labileProg.process.interrupt(-1)
 		if e[2]=="ast" and e[3]=="CUE":
