@@ -118,21 +118,35 @@ class VisualAttention(object):
 
 def main(args):
 	
-	data_pro = "latencies_pro.csv"
- 	data_anti = "latencies_anti.csv"
+	lat_data_pro = "latencies_pro.csv"
+ 	lat_data_anti = "latencies_anti.csv"
+ 	amp_data_pro = "amplitudes_pro.csv"
+ 	amp_data_anti = "amplitudes_anti.csv"
  	data_all = {}
  	
- 	with open(data_pro,"r") as data:
+ 	with open(lat_data_pro,"r") as data:
  		for line in data.readlines():
  			line = line.strip().split(",")
  			lat = [float(l) for l in line[1:]]
  			data_all[line[0]] = {}
- 			data_all[line[0]]["pro"] = lat
- 	with open(data_anti,"r") as data:
+ 			data_all[line[0]]["pro"] = {}
+ 			data_all[line[0]]["pro"]["lat"] = lat
+ 	with open(lat_data_anti,"r") as data:
  		for line in data.readlines():
  			line = line.strip().split(",")
  			lat = [float(l) for l in line[1:]]
- 			data_all[line[0]]["anti"] = lat
+ 			data_all[line[0]]["anti"] = {}
+ 			data_all[line[0]]["anti"]["lat"] = lat
+ 	with open(amp_data_pro,"r") as data:
+ 		for line in data.readlines():
+ 			line = line.strip().split(",")
+ 			amp = [float(a) for a in line[1:]]
+ 			data_all[line[0]]["pro"]["amp"] = amp
+ 	with open(amp_data_anti,"r") as data:
+ 		for line in data.readlines():
+ 			line = line.strip().split(",")
+ 			amp = [float(a) for a in line[1:]]
+ 			data_all[line[0]]["anti"]["amp"] = amp
 	
 	from scipy.stats import ks_2samp
 
@@ -185,17 +199,22 @@ def main(args):
 		
 		latenciesb.append(latencies)
 		amplitudesb.append(amplitudes)
-		print amplitudes
 	
 	results = {}
 	for sid in data_all.keys():
 		for mode in ["pro","anti"]:
-			ks_scores = []
+			ks_scores_lat = []
+			ks_scores_amp = []
 			for lb in latenciesb:
-				ks,_ = ks_2samp(lb,data_all[sid][mode])
-				ks_scores.append(ks)
-			results["%s_%s_mean" % (sid,mode)] = np.mean(ks_scores)
- 			results["%s_%s_std" % (sid,mode)] = np.std(ks_scores)
+				ks,_ = ks_2samp(lb,data_all[sid][mode]["lat"])
+				ks_scores_lat.append(ks)
+			for ab in amplitudesb:
+				ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
+				ks_scores_amp.append(ks)
+			results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),6)
+ 			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),6)
+ 			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),6)
+ 			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),6)
 
 	return results
 
