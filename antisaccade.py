@@ -64,17 +64,14 @@ class AntiSaccadeTask(object):
 class ASTLabileProg(LabileProg):
 
 	def getTarget(self):
-		if self.alpha == 1:
-			# top-down
-			self.target = self.attn.position
-		else:
-			# bottom-up
-			if self.env.ast.state < 2:
-				self.target = 0
-			elif self.env.ast.state == 2:
-				self.target = self.env.ast.cue_side
-			elif self.env.ast.state > 2:
-				self.target = self.env.ast.target_side
+		td_target = self.attn.position
+		if self.env.ast.state < 2:
+			bu_target = 0
+		elif self.env.ast.state == 2:
+			bu_target = self.env.ast.cue_side
+		elif self.env.ast.state > 2:
+			bu_target = self.env.ast.target_side
+		self.target = self.alpha * td_target + (1-self.alpha) * bu_target
 
 class VisualAttention(object):
 	__alias__ = "attention_shift"
@@ -140,6 +137,7 @@ def main(args):
 	from scipy.stats import ks_2samp
 
 	latenciesb = []
+	amplitudesb = []
 	for b in xrange(args["batches"]):		
 		env = CRISPEnvironment(args)
 
@@ -155,6 +153,7 @@ def main(args):
 		timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
 		
 		latencies = []
+		amplitudes = []
 		def endCond(e):
 			ret = False
 			if e[2]=="ast" and e[3]=="GAP":
@@ -174,6 +173,7 @@ def main(args):
 					labileProg.process.interrupt(-1)
 			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
 				latencies.append(float(env.now-env.ast.cue_time))
+				amplitudes.append(float(e[6]))
 				if env.ast.trial == args["max_trials"]:
 					ret = True
 				else:
@@ -184,6 +184,8 @@ def main(args):
 		env.run_while(endCond)
 		
 		latenciesb.append(latencies)
+		amplitudesb.append(amplitudes)
+		print amplitudes
 	
 	results = {}
 	for sid in data_all.keys():
