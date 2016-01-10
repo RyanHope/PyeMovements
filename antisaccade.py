@@ -165,14 +165,10 @@ def main(args):
 	env.run_while(endCond)
 
 	results = {}
-	filename = "latencies.csv"
-	if args['alpha']==1:
-		filename = "latencies2.csv"
-	with open(filename,"r") as data:
-		for line in data.readlines():
-			line = line.strip().split(",")
-			lat = [float(l) for l in line[1:]]
-			results["ks_"+line[0]],_ = ks_2samp(latencies, lat)
+	for line in args["data"].readlines():
+		line = line.strip().split(",")
+		lat = [float(l) for l in line[1:]]
+		results["ks_"+line[0]],_ = ks_2samp(latencies, lat)
 
 	if args["latencies"]:
 		results["latencies"] = "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
@@ -205,6 +201,8 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
+	parser.add_argument('--data', type=argparse.FileType('r'), default="latencies_pro.csv", nargs="?")
+	
 	return vars(parser.parse_args(args))
 
 def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate, alpha):
