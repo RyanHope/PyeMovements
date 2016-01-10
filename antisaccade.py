@@ -120,58 +120,80 @@ class VisualAttention(object):
 			self.restarts = 0
 
 def main(args):
+	
+	data_pro = "latencies_pro.csv"
+ 	data_anti = "latencies_anti.csv"
+ 	data_all = {}
+ 	
+ 	with open(data_pro,"r") as data:
+ 		for line in data.readlines():
+ 			line = line.strip().split(",")
+ 			lat = [float(l) for l in line[1:]]
+ 			data_all[line[0]] = {}
+ 			data_all[line[0]]["pro"] = lat
+ 	with open(data_anti,"r") as data:
+ 		for line in data.readlines():
+ 			line = line.strip().split(",")
+ 			lat = [float(l) for l in line[1:]]
+ 			data_all[line[0]]["anti"] = lat
+	
 	from scipy.stats import ks_2samp
 
-	env = CRISPEnvironment(args)
+	latenciesb = []
+	for b in xrange(args["batches"]):		
+		env = CRISPEnvironment(args)
 
-	# Create task components
-	env.ast = AntiSaccadeTask(env)
-
-	# Create model components
-	processVision = ProcessVision(env)
-	visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
-	saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
-	nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
-	labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
-	timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
-
-	latencies = []
-	def endCond(e):
-		ret = False
-		if e[2]=="ast" and e[3]=="GAP":
-			timer.setRate(args['gap_timer_rate'])
-			visAttn.process.interrupt(0)
-			if np.random.uniform() < args["gap_cancel_prob"]:
-				labileProg.process.interrupt(-1)
-		if e[2]=="ast" and e[3]=="CUE":
-			timer.setRate(args['cue_timer_rate'])
-			visAttn.process.interrupt(env.ast.cue_side)
-			if np.random.uniform() < args["cue_cancel_prob"]:
-				labileProg.process.interrupt(-1)
-		if e[2]=="ast" and e[3]=="TARGET":
-			timer.setRate(args['target_timer_rate'])
-			visAttn.process.interrupt(env.ast.target_side)
-			if np.random.uniform() < args["target_cancel_prob"]:
-				labileProg.process.interrupt(-1)
-		if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
-			latencies.append(float(env.now-env.ast.cue_time))
-			if env.ast.trial == args["max_trials"]:
-				ret = True
-			else:
-				env.ast.respond(None)
-		return ret
-
-	env.debug = args["debug"]
-	env.run_while(endCond)
-
+		# Create task components
+		env.ast = AntiSaccadeTask(env)
+	
+		# Create model components
+		processVision = ProcessVision(env)
+		visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
+		saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
+		nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
+		labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
+		timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
+		
+		latencies = []
+		def endCond(e):
+			ret = False
+			if e[2]=="ast" and e[3]=="GAP":
+				timer.setRate(args['gap_timer_rate'])
+				visAttn.process.interrupt(0)
+				if np.random.uniform() < args["gap_cancel_prob"]:
+					labileProg.process.interrupt(-1)
+			if e[2]=="ast" and e[3]=="CUE":
+				timer.setRate(args['cue_timer_rate'])
+				visAttn.process.interrupt(env.ast.cue_side)
+				if np.random.uniform() < args["cue_cancel_prob"]:
+					labileProg.process.interrupt(-1)
+			if e[2]=="ast" and e[3]=="TARGET":
+				timer.setRate(args['target_timer_rate'])
+				visAttn.process.interrupt(env.ast.target_side)
+				if np.random.uniform() < args["target_cancel_prob"]:
+					labileProg.process.interrupt(-1)
+			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
+				latencies.append(float(env.now-env.ast.cue_time))
+				if env.ast.trial == args["max_trials"]:
+					ret = True
+				else:
+					env.ast.respond(None)
+			return ret
+		
+		env.debug = args["debug"]
+		env.run_while(endCond)
+		
+		latenciesb.append(latencies)
+	
 	results = {}
-	for line in args["data"].readlines():
-		line = line.strip().split(",")
-		lat = [float(l) for l in line[1:]]
-		results["ks_"+line[0]],_ = ks_2samp(latencies, lat)
-
-	if args["latencies"]:
-		results["latencies"] = "|".join(map(lambda x: str(int(np.round_(x,3)*1000)), latencies))
+	for sid in data_all.keys():
+		for mode in ["pro","anti"]:
+			ks_scores = []
+			for lb in latenciesb:
+				ks,_ = ks_2samp(lb,data_all[sid][mode])
+				ks_scores.append(ks)
+			results["%s_%s_mean" % (sid,mode)] = np.mean(ks_scores)
+ 			results["%s_%s_std" % (sid,mode)] = np.std(ks_scores)
 
 	return results
 
@@ -179,7 +201,8 @@ def get_args(args=sys.argv[1:]):
 	import argparse
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--max-trials", type=int, default=500)
+	parser.add_argument("--max-trials", type=int, default=250)
+	parser.add_argument("--batches", type=int, default=20)
 	parser.add_argument("--timer_mean", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_states", type=int, default=11)
 	parser.add_argument("--timer_start_state", type=int, default=-1)
@@ -199,10 +222,7 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--alpha", type=float, action="store", default=0.0)
 	parser.add_argument("--debug", action="store_true")
-	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
-	parser.add_argument('--data', type=argparse.FileType('r'), default="latencies_pro.csv", nargs="?")
-	
 	return vars(parser.parse_args(args))
 
 def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate, alpha):
