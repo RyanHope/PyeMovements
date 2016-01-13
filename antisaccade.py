@@ -161,7 +161,10 @@ def main(args):
 	
 		# Create model components
 		processVision = ProcessVision(env)
-		visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
+		if args["alpha"] < 0:
+			visAttn = 0
+		else:
+			visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
 		saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
 		nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
 		labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
@@ -173,17 +176,20 @@ def main(args):
 			ret = False
 			if e[2]=="ast" and e[3]=="GAP":
 				timer.setRate(args['gap_timer_rate'])
-				visAttn.process.interrupt(0)
+				if args["alpha"] >= 0:
+					visAttn.process.interrupt(0)
 				if np.random.uniform() < args["gap_cancel_prob"]:
 					labileProg.process.interrupt(-1)
 			if e[2]=="ast" and e[3]=="CUE":
 				timer.setRate(args['cue_timer_rate'])
-				visAttn.process.interrupt(env.ast.cue_side)
+				if args["alpha"] >= 0:
+					visAttn.process.interrupt(env.ast.cue_side)
 				if np.random.uniform() < args["cue_cancel_prob"]:
 					labileProg.process.interrupt(-1)
 			if e[2]=="ast" and e[3]=="TARGET":
 				timer.setRate(args['target_timer_rate'])
-				visAttn.process.interrupt(env.ast.target_side)
+				if args["alpha"] >= 0:
+					visAttn.process.interrupt(env.ast.target_side)
 				if np.random.uniform() < args["target_cancel_prob"]:
 					labileProg.process.interrupt(-1)
 			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and (args["alpha"] < 0 or e[6]!=0)):
