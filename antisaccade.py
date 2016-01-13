@@ -161,9 +161,8 @@ def main(args):
 	
 		# Create model components
 		processVision = ProcessVision(env)
-		if args["alpha"] < 0:
-			visAttn = 0
-		else:
+		visAttn = None
+		if args["alpha"] >= 0:
 			visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
 		saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
 		nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
