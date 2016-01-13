@@ -62,9 +62,10 @@ class LabileProg(object):
 		self.next_event = 0
 		self.process = env.process(self.run())
 		self.restarts = 0
-
+		self.target = 0
+		
 	def getTarget(self):
-		self.target = None
+		pass
 
 	def setAlpha(self, alpha):
 		self.alpha = alpha

@@ -64,11 +64,12 @@ class AntiSaccadeTask(object):
 class ASTLabileProg(LabileProg):
 
 	def getTarget(self):
+		if self.alpha < 0: return # negative alpha means no spatial
 		td_target = self.attn.position
 		if self.env.ast.state < 2:
 			bu_target = 0
 		elif self.env.ast.state == 2:
-			bu_target = self.env.ast.cue_side
+			bu_target = self.env.ast.cue_side # need to add anti mode where attention looks opposite side, SHIT!
 		elif self.env.ast.state > 2:
 			bu_target = self.env.ast.target_side
 		self.target = self.alpha * td_target + (1-self.alpha) * bu_target
@@ -185,7 +186,7 @@ def main(args):
 				visAttn.process.interrupt(env.ast.target_side)
 				if np.random.uniform() < args["target_cancel_prob"]:
 					labileProg.process.interrupt(-1)
-			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and e[6]!=0):
+			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and (args["alpha"] < 0 or e[6]!=0)):
 				latencies.append(float(env.now-env.ast.cue_time))
 				amplitudes.append(float(e[6]))
 				if env.ast.trial == args["max_trials"]:
@@ -241,7 +242,7 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--cue_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
-	parser.add_argument("--alpha", type=float, action="store", default=0.0)
+	parser.add_argument("--alpha", type=float, action="store", default=0.5)
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
