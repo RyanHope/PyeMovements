@@ -12,11 +12,11 @@ from crisp import *
 
 class AntiSaccadeTask(object):
 
-	def __init__(self, env):
+	def __init__(self, env, mode):
 		self.env = env
 		self.trial = 0
 		self.states = ["FIXATE","GAP","CUE","TARGET","MASK"]
-		self.modes = ["anti","pro"]
+		self.mode = mode
 		self.sides = [-1,1]
 		self.reset()
 		self.process = env.process(self.run())
@@ -24,7 +24,6 @@ class AntiSaccadeTask(object):
 	def reset(self):
 		self.trial += 1
 		self.fixate_dur = np.random.uniform(0.5,1.5)
-		self.mode = "pro"#self.modes[np.random.randint(2)]
 		self.cue_side = self.sides[np.random.randint(2)]
 		self.target_side = -1
 		if self.mode == "pro" and self.cue_side == "right":
@@ -64,15 +63,20 @@ class AntiSaccadeTask(object):
 class ASTLabileProg(LabileProg):
 
 	def getTarget(self):
-		if self.alpha < 0: return # negative alpha means no spatial
-		td_target = self.attn.position
-		if self.env.ast.state < 2:
-			bu_target = 0
-		elif self.env.ast.state == 2:
-			bu_target = self.env.ast.cue_side # need to add anti mode where attention looks opposite side, SHIT!
-		elif self.env.ast.state > 2:
-			bu_target = self.env.ast.target_side
-		self.target = self.alpha * td_target + (1-self.alpha) * bu_target
+		if self.alpha < 0: # negative alpha means no spatial
+			self.target = 1 - np.random.sample(1)[0]
+			if np.random.sample(1) < .5:
+				self.target = -1 * self.target # abs(self.target) should always be > 0
+		else:
+			td_target = self.attn.position
+			 # need to add anti mode where attention looks opposite side, SHIT!
+			if self.env.ast.state < 2:
+				bu_target = 0
+			elif self.env.ast.state >= 2:
+				bu_target = self.env.ast.cue_side
+			elif self.env.ast.state > 2:
+				bu_target = self.env.ast.target_side
+			self.target = self.alpha * td_target + (1-self.alpha) * bu_target
 
 class VisualAttention(object):
 	__alias__ = "attention_shift"
@@ -118,94 +122,92 @@ class VisualAttention(object):
 			self.restarts = 0
 
 def main(args):
-	
 	lat_data_pro = "latencies_pro.csv"
- 	lat_data_anti = "latencies_anti.csv"
- 	amp_data_pro = "amplitudes_pro.csv"
- 	amp_data_anti = "amplitudes_anti.csv"
- 	data_all = {}
- 	
- 	with open(lat_data_pro,"r") as data:
- 		for line in data.readlines():
- 			line = line.strip().split(",")
- 			lat = [float(l) for l in line[1:]]
- 			data_all[line[0]] = {}
- 			data_all[line[0]]["pro"] = {}
- 			data_all[line[0]]["pro"]["lat"] = lat
- 	with open(lat_data_anti,"r") as data:
- 		for line in data.readlines():
- 			line = line.strip().split(",")
- 			lat = [float(l) for l in line[1:]]
- 			data_all[line[0]]["anti"] = {}
- 			data_all[line[0]]["anti"]["lat"] = lat
- 	with open(amp_data_pro,"r") as data:
- 		for line in data.readlines():
- 			line = line.strip().split(",")
- 			amp = [float(a) for a in line[1:]]
- 			data_all[line[0]]["pro"]["amp"] = amp
- 	with open(amp_data_anti,"r") as data:
- 		for line in data.readlines():
- 			line = line.strip().split(",")
- 			amp = [float(a) for a in line[1:]]
- 			data_all[line[0]]["anti"]["amp"] = amp
+	lat_data_anti = "latencies_anti.csv"
+	amp_data_pro = "amplitudes_pro.csv"
+	amp_data_anti = "amplitudes_anti.csv"
+	data_all = {}
+
+	with open(lat_data_pro,"r") as data:
+		for line in data.readlines():
+			line = line.strip().split(",")
+			lat = [float(l) for l in line[1:]]
+			data_all[line[0]] = {}
+			data_all[line[0]]["pro"] = {}
+			data_all[line[0]]["pro"]["lat"] = lat
+	with open(lat_data_anti,"r") as data:
+		for line in data.readlines():
+			line = line.strip().split(",")
+			lat = [float(l) for l in line[1:]]
+			data_all[line[0]]["anti"] = {}
+			data_all[line[0]]["anti"]["lat"] = lat
+	with open(amp_data_pro,"r") as data:
+		for line in data.readlines():
+			line = line.strip().split(",")
+			amp = [float(a) for a in line[1:]]
+			data_all[line[0]]["pro"]["amp"] = amp
+	with open(amp_data_anti,"r") as data:
+		for line in data.readlines():
+			line = line.strip().split(",")
+			amp = [float(a) for a in line[1:]]
+			data_all[line[0]]["anti"]["amp"] = amp
 	
 	from scipy.stats import ks_2samp
 
 	latenciesb = []
 	amplitudesb = []
-	for b in xrange(args["batches"]):		
-		env = CRISPEnvironment(args)
+	for b in xrange(args["batches"]):
+		for mode in ["pro","anti"]:
+			latencies = []
+			amplitudes = []
+			for t in xrange(args["max_trials"]):
+				env = CRISPEnvironment(args)
 
-		# Create task components
-		env.ast = AntiSaccadeTask(env)
-	
-		# Create model components
-		processVision = ProcessVision(env)
-		visAttn = None
-		if args["alpha"] >= 0:
-			visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
-		saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
-		nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
-		labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
-		timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
-		
-		latencies = []
-		amplitudes = []
-		def endCond(e):
-			ret = False
-			if e[2]=="ast" and e[3]=="GAP":
-				timer.setRate(args['gap_timer_rate'])
+				# Create task components
+				env.ast = AntiSaccadeTask(env, mode)
+
+				# Create model components
+				processVision = ProcessVision(env)
+				visAttn = None
 				if args["alpha"] >= 0:
-					visAttn.process.interrupt(0)
-				if np.random.uniform() < args["gap_cancel_prob"]:
-					labileProg.process.interrupt(-1)
-			if e[2]=="ast" and e[3]=="CUE":
-				timer.setRate(args['cue_timer_rate'])
-				if args["alpha"] >= 0:
-					visAttn.process.interrupt(env.ast.cue_side)
-				if np.random.uniform() < args["cue_cancel_prob"]:
-					labileProg.process.interrupt(-1)
-			if e[2]=="ast" and e[3]=="TARGET":
-				timer.setRate(args['target_timer_rate'])
-				if args["alpha"] >= 0:
-					visAttn.process.interrupt(env.ast.target_side)
-				if np.random.uniform() < args["target_cancel_prob"]:
-					labileProg.process.interrupt(-1)
-			if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and (args["alpha"] < 0 or e[6]!=0)):
-				latencies.append(float(env.now-env.ast.cue_time))
-				amplitudes.append(float(e[6]))
-				if env.ast.trial == args["max_trials"]:
-					ret = True
-				else:
-					env.ast.respond(None)
-			return ret
-		
-		env.debug = args["debug"]
-		env.run_while(endCond)
-		
-		latenciesb.append(latencies)
-		amplitudesb.append(amplitudes)
-	
+					visAttn = VisualAttention(env, mean=args['attn_mean'], stdev=args['attn_stdev'])
+				saccadeExec = SaccadeExec(env, processVision, mean=args['exec_mean'], stdev=args['exec_stdev'])
+				nonLabileProg = NonLabileProg(env, saccadeExec, mean=args['nonlabile_mean'], stdev=args['nonlabile_stdev'])
+				labileProg = ASTLabileProg(env, nonLabileProg, visAttn, mean=args['labile_mean'], stdev=args['labile_stdev'], alpha=args['alpha'])
+				timer = Timer(env, labileProg, mean=args['timer_mean'], states=args['timer_states'], start_state=args['timer_start_state'])
+
+				def endCond(e):
+					ret = False
+					if e[2]=="ast" and e[3]=="GAP":
+						timer.setRate(args['gap_timer_rate'])
+						if args["alpha"] >= 0:
+							visAttn.process.interrupt(0)
+						if np.random.uniform() < args["gap_cancel_prob"]:
+							labileProg.process.interrupt(-1)
+					if e[2]=="ast" and e[3]=="CUE":
+						timer.setRate(args['cue_timer_rate'])
+						if args["alpha"] >= 0:
+							visAttn.process.interrupt(env.ast.cue_side)
+						if np.random.uniform() < args["cue_cancel_prob"]:
+							labileProg.process.interrupt(-1)
+					if e[2]=="ast" and e[3]=="TARGET":
+						timer.setRate(args['target_timer_rate'])
+						if args["alpha"] >= 0:
+							visAttn.process.interrupt(env.ast.target_side)
+						if np.random.uniform() < args["target_cancel_prob"]:
+							labileProg.process.interrupt(-1)
+					if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and abs(e[6])>0):
+						latencies.append(float(env.now-env.ast.cue_time))
+						amplitudes.append(float(e[6]))
+						ret = True
+					return ret
+
+				env.debug = args["debug"]
+				env.run_while(endCond)
+
+			latenciesb.append(latencies)
+			amplitudesb.append(amplitudes)
+
 	results = {}
 	for sid in data_all.keys():
 		for mode in ["pro","anti"]:
@@ -218,10 +220,9 @@ def main(args):
 				ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
 				ks_scores_amp.append(ks)
 			results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),6)
- 			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),6)
- 			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),6)
- 			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),6)
-
+			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),6)
+			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),6)
+			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),6)
 	return results
 
 def get_args(args=sys.argv[1:]):
