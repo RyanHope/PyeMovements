@@ -219,10 +219,10 @@ def main(args):
 			for ab in amplitudesb:
 				ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
 				ks_scores_amp.append(ks)
-			results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),6)
-			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),6)
-			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),6)
-			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),6)
+			results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
+			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
+			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
+			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
 	return results
 
 def get_args(args=sys.argv[1:]):
