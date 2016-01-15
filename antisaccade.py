@@ -69,7 +69,6 @@ class ASTLabileProg(LabileProg):
 				self.target = -1 * self.target # abs(self.target) should always be > 0
 		else:
 			td_target = self.attn.position
-			 # need to add anti mode where attention looks opposite side, SHIT!
 			if self.env.ast.state < 2:
 				bu_target = 0
 			elif self.env.ast.state >= 2:
@@ -187,7 +186,7 @@ def main(args):
 					if e[2]=="ast" and e[3]=="CUE":
 						timer.setRate(args['cue_timer_rate'])
 						if args["alpha"] >= 0:
-							visAttn.process.interrupt(env.ast.cue_side)
+							visAttn.process.interrupt(env.ast.target_side)
 						if np.random.uniform() < args["cue_cancel_prob"]:
 							labileProg.process.interrupt(-1)
 					if e[2]=="ast" and e[3]=="TARGET":
