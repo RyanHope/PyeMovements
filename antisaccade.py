@@ -71,7 +71,7 @@ class ASTLabileProg(LabileProg):
 			td_target = self.attn.position
 			if self.env.ast.state < 2:
 				bu_target = 0
-			elif self.env.ast.state >= 2:
+			elif self.env.ast.state == 2:
 				bu_target = self.env.ast.cue_side
 			elif self.env.ast.state > 2:
 				bu_target = self.env.ast.target_side
