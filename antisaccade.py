@@ -153,10 +153,12 @@ def main(args):
 	
 	from scipy.stats import ks_2samp
 
-	latenciesb = []
-	amplitudesb = []
+	latenciesb = {}
+	amplitudesb = {}
 	for b in xrange(args["batches"]):
 		for mode in ["pro","anti"]:
+			latenciesb[mode] = []
+			amplitudesb[mode] = []
 			latencies = []
 			amplitudes = []
 			for t in xrange(args["max_trials"]):
@@ -204,24 +206,34 @@ def main(args):
 				env.debug = args["debug"]
 				env.run_while(endCond)
 
-			latenciesb.append(latencies)
-			amplitudesb.append(amplitudes)
+			latenciesb[mode].append(latencies)
+			amplitudesb[mode].append(amplitudes)
 
 	results = {}
-	for sid in data_all.keys():
+
+	if not args["notests"]:
+		for sid in data_all.keys():
+			for mode in ["pro","anti"]:
+				ks_scores_lat = []
+				ks_scores_amp = []
+				for lb in latenciesb[mode]:
+					ks,_ = ks_2samp(lb,data_all[sid][mode]["lat"])
+					ks_scores_lat.append(ks)
+				for ab in amplitudesb[mode]:
+					ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
+					ks_scores_amp.append(ks)
+				results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
+				results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
+				results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
+				results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
+
+	if args["latencies"]:
+		results["latencies"] = {}
 		for mode in ["pro","anti"]:
-			ks_scores_lat = []
-			ks_scores_amp = []
-			for lb in latenciesb:
-				ks,_ = ks_2samp(lb,data_all[sid][mode]["lat"])
-				ks_scores_lat.append(ks)
-			for ab in amplitudesb:
-				ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
-				ks_scores_amp.append(ks)
-			results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
-			results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
-			results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
-			results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
+			results["latencies"][mode] = []
+			for lat in latenciesb[mode]:
+				results["latencies"][mode].append("|".join(map(lambda x: str(int(np.round_(x,3)*1000)), lat)))
+
 	return results
 
 def get_args(args=sys.argv[1:]):
@@ -248,6 +260,9 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--target_cancel_prob", type=float, action="store", default=0.00)
 	parser.add_argument("--target_timer_rate", type=float, action="store", default=1.0)
 	parser.add_argument("--alpha", type=float, action="store", default=0.5)
+	parser.add_argument("--notests", action="store_true")
+	parser.add_argument("--latencies", action="store_true")
+	parser.add_argument("--amplitudes", action="store_true")
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
