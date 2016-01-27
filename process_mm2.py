@@ -9,10 +9,13 @@ class CRISP(IsDescription):
     timer_mean  = Float32Col()
     labile_mean  = Float32Col()
     labile_stdev = Float32Col()
+    attn_mean  = Float32Col()
+    attn_stdev = Float32Col()
     cue_cancel_prob  = Float32Col()
     gap_cancel_prob  = Float32Col()
     cue_timer_rate  = Float32Col()
     gap_timer_rate  = Float32Col()
+    alpha  = Float32Col()
     lat_mean = Float32Col()
     lat_std = Float32Col()
 
@@ -51,10 +54,13 @@ if __name__ == '__main__':
             crisp["timer_mean"] = line[1]
             crisp["labile_mean"] = line[2]
             crisp["labile_stdev"] = line[3]
+            crisp["attn_mean"] = line[4]
+            crisp["attn_stdev"] = line[5]
             crisp["gap_cancel_prob"] = line[6]
             crisp["gap_timer_rate"] = line[7]
             crisp["cue_cancel_prob"] = line[8]
             crisp["cue_timer_rate"] = line[9]
+            crisp["alpha"] = line[10]
             crisp["lat_mean"] = data["pro_lat_mean_%s" % sid]
             crisp["lat_std"] = data["pro_lat_std_%s" % sid]
             crisp.append()
