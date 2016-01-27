@@ -63,7 +63,8 @@ class LabileProg(object):
 		self.process = env.process(self.run())
 		self.restarts = 0
 		self.target = 0
-		
+		self.spid = -1 # since env could trigger cancel
+
 	def getTarget(self):
 		pass
 
