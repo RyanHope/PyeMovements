@@ -241,7 +241,7 @@ def get_args(args=sys.argv[1:]):
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--max-trials", type=int, default=250)
-	parser.add_argument("--batches", type=int, default=20)
+	parser.add_argument("--batches", type=int, default=5)
 	parser.add_argument("--timer_mean", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_states", type=int, default=11)
 	parser.add_argument("--timer_start_state", type=int, default=-1)
