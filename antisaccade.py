@@ -150,7 +150,7 @@ def main(args):
 			line = line.strip().split(",")
 			amp = [float(a) for a in line[1:]]
 			data_all[line[0]]["anti"]["amp"] = amp
-	
+
 	from scipy.stats import ks_2samp
 
 	latenciesb = {}
@@ -268,6 +268,21 @@ def get_args(args=sys.argv[1:]):
 	return vars(parser.parse_args(args))
 
 def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate, alpha):
+	args = get_args([])
+	args["timer_states"] = float(timer_states)
+	args["timer_mean"] = float(timer_mean)
+	args["labile_mean"] = float(labile_mean)
+	args["labile_stdev"] = float(labile_stdev)
+	args["attn_mean"] = float(attn_mean)
+	args["attn_stdev"] = float(attn_stdev)
+	args["gap_cancel_prob"] = float(gap_cancel_prob)
+	args["gap_timer_rate"] = float(gap_timer_rate)
+	args["cue_cancel_prob"] = float(cue_cancel_prob)
+	args["cue_timer_rate"] = float(cue_timer_rate)
+	args["alpha"] = float(alpha)
+	return main(args)
+
+def run_mm_new(alpha, attn_mean, timer_mean, labile_mean, cue_timer_rate, gap_timer_rate, timer_states, labile_stdev, attn_stdev, cue_cancel_prob, gap_cancel_prob):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
 	args["timer_mean"] = float(timer_mean)
