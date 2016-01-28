@@ -26,9 +26,9 @@ class AntiSaccadeTask(object):
 		self.fixate_dur = np.random.uniform(0.5,1.5)
 		self.cue_side = self.sides[np.random.randint(2)]
 		self.target_side = -1
-		if self.mode == "pro" and self.cue_side == "right":
+		if self.mode == "pro" and self.cue_side == 1:
 			self.target_side = 1
-		elif self.mode == "anti" and self.cue_side == "left":
+		elif self.mode == "anti" and self.cue_side == -1:
 			self.target_side = 1
 		self.gap_dur = .2
 		self.cue_dur = .4
@@ -153,13 +153,15 @@ def main(args):
 
 	from scipy.stats import ks_2samp
 
-	measures = {"latencies":{},"amplitudes":{}}
+	measures = {"latencies":{},"amplitudes":{},"responses":{}}
 	for b in xrange(args["batches"]):
 		for mode in ["pro","anti"]:
 			measures["latencies"][mode] = []
 			measures["amplitudes"][mode] = []
+			measures["responses"][mode] = []
 			latencies = []
 			amplitudes = []
+			responses = []
 			for t in xrange(args["max_trials"]):
 				env = CRISPEnvironment(args)
 
@@ -197,8 +199,13 @@ def main(args):
 						if np.random.uniform() < args["target_cancel_prob"]:
 							labileProg.process.interrupt(-1)
 					if env.ast.state>1 and (e[2]=="saccade_execution" and e[3]=="started" and abs(e[6])>0):
-						latencies.append(float(env.now-env.ast.cue_time))
-						amplitudes.append(float(e[6]))
+						amp = float(e[6])
+						response = 0
+						if (env.ast.target_side == -1 and amp < 0) or (env.ast.target_side == 1 and amp > 0):
+							latencies.append(float(env.now-env.ast.cue_time))
+							amplitudes.append(amp)
+							response = 1
+						responses.append(response)
 						ret = True
 					return ret
 
@@ -207,6 +214,7 @@ def main(args):
 
 			measures["latencies"][mode].append(latencies)
 			measures["amplitudes"][mode].append(amplitudes)
+			measures["responses"][mode].append(responses)
 
 	results = {}
 
@@ -219,20 +227,25 @@ def main(args):
 					ks,_ = ks_2samp(lb,data_all[sid][mode]["lat"])
 					ks_scores_lat.append(ks)
 				for ab in measures["amplitudes"][mode]:
-					ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
+					ks,_ = ks_2samp(map(abs,ab),data_all[sid][mode]["amp"])
 					ks_scores_amp.append(ks)
+				results["%s_rsp_mean_%s" % (mode,sid)] = round(np.mean(measures["responses"][mode]),3)
 				results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
 				#results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
 				results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
 				#results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
 
-	for m in ["latencies","amplitudes"]:
+	for m in ["latencies","amplitudes","responses"]:
 		if args[m]:
 			results[m] = {}
 			for mode in ["pro","anti"]:
 				results[m][mode] = []
 				for v in measures[m][mode]:
 					results[m][mode].append(v)
+
+	if args["dumpDVs"]:
+		for k in results.keys():
+			print k
 
 	return results
 
@@ -263,6 +276,8 @@ def get_args(args=sys.argv[1:]):
 	parser.add_argument("--notests", action="store_true")
 	parser.add_argument("--latencies", action="store_true")
 	parser.add_argument("--amplitudes", action="store_true")
+	parser.add_argument("--responses", action="store_true")
+	parser.add_argument("--dumpDVs", action="store_true")
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument('--outfile', type=argparse.FileType('w'), default=-1, nargs="?")
 	return vars(parser.parse_args(args))
