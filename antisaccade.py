@@ -153,12 +153,11 @@ def main(args):
 
 	from scipy.stats import ks_2samp
 
-	latenciesb = {}
-	amplitudesb = {}
+	measures = {"latencies":{},"amplitudes":{}}
 	for b in xrange(args["batches"]):
 		for mode in ["pro","anti"]:
-			latenciesb[mode] = []
-			amplitudesb[mode] = []
+			measures["latencies"][mode] = []
+			measures["amplitudes"][mode] = []
 			latencies = []
 			amplitudes = []
 			for t in xrange(args["max_trials"]):
@@ -206,8 +205,8 @@ def main(args):
 				env.debug = args["debug"]
 				env.run_while(endCond)
 
-			latenciesb[mode].append(latencies)
-			amplitudesb[mode].append(amplitudes)
+			measures["latencies"][mode].append(latencies)
+			measures["amplitudes"][mode].append(amplitudes)
 
 	results = {}
 
@@ -216,10 +215,10 @@ def main(args):
 			for mode in ["pro","anti"]:
 				ks_scores_lat = []
 				ks_scores_amp = []
-				for lb in latenciesb[mode]:
+				for lb in measures["latencies"][mode]:
 					ks,_ = ks_2samp(lb,data_all[sid][mode]["lat"])
 					ks_scores_lat.append(ks)
-				for ab in amplitudesb[mode]:
+				for ab in measures["amplitudes"][mode]:
 					ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
 					ks_scores_amp.append(ks)
 				results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
@@ -227,12 +226,13 @@ def main(args):
 				results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
 				#results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
 
-	if args["latencies"]:
-		results["latencies"] = {}
-		for mode in ["pro","anti"]:
-			results["latencies"][mode] = []
-			for lat in latenciesb[mode]:
-				results["latencies"][mode].append("|".join(map(lambda x: str(int(np.round_(x,3)*1000)), lat)))
+	for m in ["latencies","amplitudes"]:
+		if args[m]:
+			results[m] = {}
+			for mode in ["pro","anti"]:
+				results[m][mode] = []
+				for v in measures[m][mode]:
+					results[m][mode].append(v)
 
 	return results
 
