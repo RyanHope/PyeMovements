@@ -150,7 +150,7 @@ def main(args):
 			line = line.strip().split(",")
 			amp = [float(a) for a in line[1:]]
 			data_all[line[0]]["anti"]["amp"] = amp
-	
+
 	from scipy.stats import ks_2samp
 
 	latenciesb = {}
@@ -223,9 +223,9 @@ def main(args):
 					ks,_ = ks_2samp(ab,data_all[sid][mode]["amp"])
 					ks_scores_amp.append(ks)
 				results["%s_lat_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_lat),3)
-				results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
+				#results["%s_lat_std_%s" % (mode,sid)] = round(np.std(ks_scores_lat),3)
 				results["%s_amp_mean_%s" % (mode,sid)] = round(np.mean(ks_scores_amp),3)
-				results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
+				#results["%s_amp_std_%s" % (mode,sid)] = round(np.std(ks_scores_amp),3)
 
 	if args["latencies"]:
 		results["latencies"] = {}
@@ -241,7 +241,7 @@ def get_args(args=sys.argv[1:]):
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--max-trials", type=int, default=250)
-	parser.add_argument("--batches", type=int, default=20)
+	parser.add_argument("--batches", type=int, default=5)
 	parser.add_argument("--timer_mean", type=float, action="store", default=0.250)
 	parser.add_argument("--timer_states", type=int, default=11)
 	parser.add_argument("--timer_start_state", type=int, default=-1)
@@ -268,6 +268,21 @@ def get_args(args=sys.argv[1:]):
 	return vars(parser.parse_args(args))
 
 def run_mm(timer_states, timer_mean, labile_mean, labile_stdev, attn_mean, attn_stdev, gap_cancel_prob, gap_timer_rate, cue_cancel_prob, cue_timer_rate, alpha):
+	args = get_args([])
+	args["timer_states"] = float(timer_states)
+	args["timer_mean"] = float(timer_mean)
+	args["labile_mean"] = float(labile_mean)
+	args["labile_stdev"] = float(labile_stdev)
+	args["attn_mean"] = float(attn_mean)
+	args["attn_stdev"] = float(attn_stdev)
+	args["gap_cancel_prob"] = float(gap_cancel_prob)
+	args["gap_timer_rate"] = float(gap_timer_rate)
+	args["cue_cancel_prob"] = float(cue_cancel_prob)
+	args["cue_timer_rate"] = float(cue_timer_rate)
+	args["alpha"] = float(alpha)
+	return main(args)
+
+def run_mm_new(alpha, attn_mean, timer_mean, labile_mean, cue_timer_rate, gap_timer_rate, timer_states, labile_stdev, attn_stdev, cue_cancel_prob, gap_cancel_prob):
 	args = get_args([])
 	args["timer_states"] = float(timer_states)
 	args["timer_mean"] = float(timer_mean)
