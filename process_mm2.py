@@ -57,8 +57,8 @@ if __name__ == '__main__':
           crisp["lat_mean_anti"] = data["anti_lat_mean_%s" % sid]
           crisp["amp_mean_pro"] = data["pro_amp_mean_%s" % sid]
           crisp["amp_mean_anti"] = data["anti_amp_mean_%s" % sid]
-          #crisp["rsp_mean_pro"] = data["pro_rsp_mean_%s" % sid]
-          #crisp["rsp_mean_anti"] = data["anti_rsp_mean_%s" % sid]
+          crisp["rsp_mean_pro"] = data["pro_rsp_mean_%s" % sid]
+          crisp["rsp_mean_anti"] = data["anti_rsp_mean_%s" % sid]
           crisp.append()
 
     table.flush()
