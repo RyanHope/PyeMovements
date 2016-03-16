@@ -7,7 +7,7 @@ help:
 bundle:
 	rm -f bundle
 	mkdir -p bundle/$(CRISP)/simpy/resources
-	cp antisaccade.py crisp.py bundle/$(CRISP)
+	cp antisaccade.py crisp.py abscrisp.py bundle/$(CRISP)
 	cp latencies_pro.csv bundle/$(CRISP)
 	cp latencies_anti.csv bundle/$(CRISP)
 	cp amplitudes_pro.csv bundle/$(CRISP)
